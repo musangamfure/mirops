@@ -2,8 +2,17 @@ import type { AppState, AppAction, Transaction } from "./types";
 import { DEPARTMENTS, LOW_FLOAT_THRESHOLD } from "./constants";
 
 // ─── DATE HELPERS ─────────────────────────────────────────────────────────────
+/**
+ * Returns today's date as YYYY-MM-DD in the browser's LOCAL timezone.
+ * Using toISOString() would return UTC which is 2 hours behind Rwanda (UTC+2)
+ * and can cause dates to appear on the wrong day.
+ */
 export function todayStr(): string {
-  return new Date().toISOString().slice(0, 10);
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
 }
 
 // ─── ID HELPER ───────────────────────────────────────────────────────────────

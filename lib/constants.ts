@@ -39,7 +39,7 @@ export const MEAL_SESSIONS = ["Breakfast", "Lunch", "Dinner"] as const;
 export type MealSession = (typeof MEAL_SESSIONS)[number];
 
 // ─── EMPLOYEES ──────────────────────────────────────────────────────────────
-export const EMPLOYEES = [
+export const DEFAULT_EMPLOYEES = [
   "Emmanuel",
   "Claudine",
   "Jean Pierre",
@@ -47,6 +47,9 @@ export const EMPLOYEES = [
   "Kevin",
   "Solange",
 ] as const;
+
+// Mutable list — managed via localStorage in StaffOps
+export const EMPLOYEES: string[] = [...DEFAULT_EMPLOYEES];
 
 // ─── LOW-FLOAT THRESHOLD ────────────────────────────────────────────────────
 export const LOW_FLOAT_THRESHOLD = 10_000; // RWF

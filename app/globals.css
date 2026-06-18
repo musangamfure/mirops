@@ -1,25 +1,85 @@
-* {
+/* ── Reset & Base ─────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:        #0a1208;
+  --bg-card:   #111e0f;
+  --bg-raised: #162214;
+  --border:    #1e3320;
+  --border-hi: #2d4a2d;
+  --green-dim: #4a7c59;
+  --green-med: #2d6a4f;
+  --green-lo:  #1b4332;
+  --green-hi:  #4ade80;
+  --text:      #e8dcc8;
+  --text-dim:  #c8e6c9;
+  --text-muted:#9ab89a;
+  --text-faint:#6a9c6a;
+  --red:       #c0392b;
+  --red-lo:    #7f1d1d;
+  --amber:     #f59e0b;
+  --purple:    #7c3aed;
+  --white:     #ffffff;
+
+  /* easing */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-fast: 120ms;
+  --dur-med:  220ms;
+}
+
+html { font-size: 16px; -webkit-font-smoothing: antialiased; }
+
+body {
+  font-family: 'Georgia', 'Times New Roman', serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+/* ── Scrollbar ────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border-hi); border-radius: 2px; }
+
+/* ── Focus ────────────────────────────────────────────────────── */
+:focus-visible { outline: 2px solid var(--green-dim); outline-offset: 2px; }
+
+/* ── Inputs ───────────────────────────────────────────────────── */
+input, select, textarea {
+  font-family: inherit;
+  color: var(--text);
+  background: var(--bg);
+  border: 1.5px solid var(--border-hi);
+  border-radius: 10px;
+  padding: 11px 14px;
+  font-size: 14px;
+  width: 100%;
+  outline: none;
+  transition: border-color var(--dur-fast);
   box-sizing: border-box;
 }
+input:focus, select:focus, textarea:focus {
+  border-color: var(--green-dim);
+  box-shadow: 0 0 0 3px rgba(74,124,89,0.15);
+}
+select option { background: var(--bg-raised); color: var(--text); }
+input[type='date']::-webkit-calendar-picker-indicator { filter: invert(0.6); }
 
-html,
-body {
-  margin: 0;
-  padding: 0;
+/* ── Animations ───────────────────────────────────────────────── */
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes sheetUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.96); }
+  to   { opacity: 1; transform: scale(1); }
 }
 
-body {
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-input,
-select,
-button {
-  font-family: inherit;
-}
-
-input[type="date"]::-webkit-calendar-picker-indicator {
-  filter: invert(1);
-  cursor: pointer;
+/* ── Reduced motion ───────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 1ms !important; transition-duration: 1ms !important; }
 }
