@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/mongodb";
 import Transaction from "@/lib/models/Transaction";
+import { markTransactionDeletedInSheet } from "@/lib/googleSheets";
 
 export const dynamic = "force-dynamic";
 
@@ -19,6 +20,11 @@ export async function DELETE(
         { status: 404 }
       );
     }
+
+    // Mirror the deletion to Google Sheets — best-effort, never blocks
+    // or fails the response.
+    markTransactionDeletedInSheet(params.id).catch(() => {});
+
     return NextResponse.json({ success: true, data: { id: params.id } });
   } catch (err) {
     console.error("DELETE /api/transactions/:id error:", err);

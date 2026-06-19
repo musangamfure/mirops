@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/mongodb";
 import Transaction, { type TransactionDoc } from "@/lib/models/Transaction";
+import { appendTransactionToSheet } from "@/lib/googleSheets";
+import type { Transaction as TxShape } from "@/lib/types";
 
 // Always fetch live data — never statically cache or pre-render this route.
 export const dynamic = "force-dynamic";
@@ -22,6 +24,7 @@ function normalize(doc: TransactionDoc) {
   const { _id, createdAt, updatedAt, ...rest } = doc as TransactionDoc & {
     __v?: number;
     dept?: string;
+    mealSite?: string;
   };
   // Strip any Mongoose internals (e.g. __v) that may be present via .lean()
   delete (rest as Record<string, unknown>).__v;
@@ -30,7 +33,13 @@ function normalize(doc: TransactionDoc) {
   if (!rest.product && rest.dept) {
     rest.product = LEGACY_DEPT_TO_PRODUCT[rest.dept] ?? undefined;
   }
+  // Migrate legacy `mealSite` (meals-only field) into the general `site`
+  // field, which now applies to every transaction kind.
+  if (!rest.site && rest.mealSite) {
+    rest.site = rest.mealSite;
+  }
   delete (rest as { dept?: string }).dept;
+  delete (rest as { mealSite?: string }).mealSite;
   return { id: _id, ...rest };
 }
 
@@ -50,14 +59,14 @@ export async function GET() {
 }
 
 // POST /api/transactions — create a new transaction
-// Body: { id, kind, date, amount, note?, product?, site?, category?, mealSite?, mealSession? }
+// Body: { id, kind, date, amount, note?, product?, site?, category?, mealSession? }
 // `id` is the client-generated id (also used as the Mongo _id) so the
 // reducer's optimistic local state and the database stay in sync.
 export async function POST(req: Request) {
   try {
     await connectDB();
     const body = await req.json();
-    const { id, kind, date, amount, note, product, site, category, mealSite, mealSession } = body;
+    const { id, kind, date, amount, note, product, site, category, mealSession } = body;
 
     if (!id || !kind || !date || amount === undefined || amount === null) {
       return NextResponse.json(
@@ -88,10 +97,16 @@ export async function POST(req: Request) {
       product,
       site,
       category,
-      mealSite,
       mealSession,
     });
-    return NextResponse.json({ success: true, data: normalize(tx.toObject()) }, { status: 201 });
+    const normalized = normalize(tx.toObject());
+
+    // Mirror to Google Sheets — best-effort, never blocks or fails the
+    // response. The function itself swallows its own errors, but this
+    // extra guard protects against any unexpected throw.
+    appendTransactionToSheet(normalized as unknown as TxShape).catch(() => {});
+
+    return NextResponse.json({ success: true, data: normalized }, { status: 201 });
   } catch (err) {
     console.error("POST /api/transactions error:", err);
     const message = err instanceof Error ? err.message : "Unknown error";

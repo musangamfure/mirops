@@ -19,8 +19,11 @@ const TransactionSchema = new Schema(
     product: { type: String },
     site: { type: String },
     category: { type: String },
-    mealSite: { type: String },
     mealSession: { type: String },
+    // Legacy field — no longer written. Kept in the schema so existing
+    // documents from before the Site rework still load without error;
+    // the API layer migrates it into `site` on read.
+    mealSite: { type: String },
   },
   { timestamps: true }
 );
@@ -36,8 +39,9 @@ export interface TransactionDoc {
   product?: string;
   site?: string;
   category?: string;
-  mealSite?: string;
   mealSession?: string;
+  /** @deprecated legacy field, migrated into `site` on read */
+  mealSite?: string;
   createdAt?: Date;
   updatedAt?: Date;
 }

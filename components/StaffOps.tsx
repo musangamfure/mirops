@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { PRODUCTS, SITES, DEFAULT_EMPLOYEES } from "@/lib/constants";
 import { loadCategories, saveCategories } from "@/lib/categories";
 import type { AppState } from "@/lib/types";
-import { fmt } from "@/lib/store";
+import { fmt, bySite } from "@/lib/store";
 
 const EMPLOYEES_KEY = "miru_employees_v1";
 
@@ -501,40 +501,40 @@ export function StaffOps({ state, isMobile }: { state: AppState; isMobile: boole
       {/* Site summary */}
       <Card style={{ marginBottom: 16 }}>
         <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 14, color: "#c8e6c9" }}>
-          🏭 Site Overview
+          🏭 Site Overview (All-Time)
         </div>
         <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
-          {SITES.map((s) => {
-            const siteTx = allTx.filter((t) => {
-              const siteId = t.category === "Meals (Staff)" ? t.mealSite : t.site;
-              return siteId === s.id && t.kind !== "float_topup";
-            });
-            const rev = siteTx.filter((t) => t.kind === "revenue").reduce((a, t) => a + t.amount, 0);
-            const exp = siteTx.filter((t) => t.kind === "expense").reduce((a, t) => a + t.amount, 0);
-            return (
-              <div key={s.id} style={{
-                flex: 1, minWidth: 200, background: "#162214",
-                borderRadius: 12, padding: "14px 18px", border: "1px solid #1e3320",
-              }}>
-                <div style={{ fontSize: 22, marginBottom: 6 }}>{s.emoji}</div>
-                <div style={{ fontWeight: 700, color: "#c8e6c9", marginBottom: 10 }}>{s.label}</div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
-                    <span style={{ color: "#9ab89a" }}>Revenue</span>
-                    <span style={{ color: "#4ade80", fontWeight: 700 }}>{fmt(rev)}</span>
-                  </div>
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
-                    <span style={{ color: "#9ab89a" }}>Expenses</span>
-                    <span style={{ color: "#f87171", fontWeight: 700 }}>{fmt(exp)}</span>
-                  </div>
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, paddingTop: 6, borderTop: "1px solid #1e3320", marginTop: 4 }}>
-                    <span style={{ color: "#c8e6c9", fontWeight: 700 }}>Net</span>
-                    <span style={{ color: rev - exp >= 0 ? "#4ade80" : "#f87171", fontWeight: 800 }}>{fmt(rev - exp)}</span>
+          {(() => {
+            const siteIds = SITES.map((s) => s.id);
+            const totals = bySite(allTx, siteIds);
+            return SITES.map((s) => {
+              const rev = totals[s.id]?.revenue ?? 0;
+              const exp = totals[s.id]?.expense ?? 0;
+              return (
+                <div key={s.id} style={{
+                  flex: 1, minWidth: 200, background: "#162214",
+                  borderRadius: 12, padding: "14px 18px", border: "1px solid #1e3320",
+                }}>
+                  <div style={{ fontSize: 22, marginBottom: 6 }}>{s.emoji}</div>
+                  <div style={{ fontWeight: 700, color: "#c8e6c9", marginBottom: 10 }}>{s.label}</div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
+                      <span style={{ color: "#9ab89a" }}>Revenue</span>
+                      <span style={{ color: "#4ade80", fontWeight: 700 }}>{fmt(rev)}</span>
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
+                      <span style={{ color: "#9ab89a" }}>Expenses</span>
+                      <span style={{ color: "#f87171", fontWeight: 700 }}>{fmt(exp)}</span>
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, paddingTop: 6, borderTop: "1px solid #1e3320", marginTop: 4 }}>
+                      <span style={{ color: "#c8e6c9", fontWeight: 700 }}>Net</span>
+                      <span style={{ color: rev - exp >= 0 ? "#4ade80" : "#f87171", fontWeight: 800 }}>{fmt(rev - exp)}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            });
+          })()}
         </div>
       </Card>
     </div>

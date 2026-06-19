@@ -5,7 +5,7 @@ import { PRODUCTS, SITES } from "@/lib/constants";
 import { loadCategories } from "@/lib/categories";
 import type { AppState, AppAction, Transaction } from "@/lib/types";
 import {
-  fmt, sumKind, byProduct, byCategory, mealsBySiteToday,
+  fmt, sumKind, byProduct, byCategory, bySite, mealsBySiteToday,
   getOpeningFloat, getClosingFloat, isLowFloat, isDeficit,
 } from "@/lib/store";
 import { FloatPanel } from "./FloatPanel";
@@ -100,7 +100,7 @@ function EditModal({
   };
 
   const product = PRODUCTS.find((p) => p.id === tx.product);
-  const site = SITES.find((s) => s.id === (tx.mealSite ?? tx.site));
+  const site = SITES.find((s) => s.id === tx.site);
 
   const panelStyle = isMobile
     ? {
@@ -324,8 +324,7 @@ export function EntryRow({
   const [editing, setEditing] = useState(false);
 
   const product = PRODUCTS.find((p) => p.id === t.product);
-  const siteId = t.category === "Meals (Staff)" ? t.mealSite : t.site;
-  const site = SITES.find((s) => s.id === siteId);
+  const site = SITES.find((s) => s.id === t.site);
 
   const amountColor = t.kind === "revenue" ? "#4ade80"
     : t.kind === "float_topup" ? "#c4b5fd" : "#f87171";
@@ -528,6 +527,9 @@ export function Dashboard({
   const activeCats = categories.filter((c) => catExpDay[c] > 0);
   const catsToShow = activeCats.length > 0 ? activeCats : categories.slice(0, 6);
 
+  const siteIds = SITES.map((s) => s.id);
+  const siteDay = bySite(dayTx, siteIds);
+
   const meals = mealsBySiteToday(dayTx);
   const revenueEntries = dayTx.filter((t) => t.kind === "revenue").length;
   const expenseEntries = dayTx.filter((t) => t.kind === "expense").length;
@@ -662,6 +664,59 @@ export function Dashboard({
               <MiniBar value={catExpDay[c]} max={maxCatExp} color="#c0392b" />
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* Revenue & Expenses by Site */}
+      <div style={{
+        background: "#111e0f", border: "1px solid #1e3320",
+        borderRadius: 14, padding: "18px 20px", marginBottom: 20,
+      }}>
+        <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 14, color: "#c8e6c9" }}>
+          Revenue &amp; Expenses by Site
+        </div>
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: isMobile ? "1fr" : `repeat(${SITES.length}, 1fr)`,
+          gap: 12,
+        }}>
+          {SITES.map((s) => {
+            const siteRev = siteDay[s.id]?.revenue ?? 0;
+            const siteExp = siteDay[s.id]?.expense ?? 0;
+            const siteNet = siteRev - siteExp;
+            return (
+              <div key={s.id} style={{
+                background: "#162214", border: "1px solid #1e3320",
+                borderRadius: 12, padding: "14px 16px",
+              }}>
+                <div style={{
+                  display: "flex", alignItems: "center", gap: 8, marginBottom: 10,
+                  fontWeight: 700, fontSize: 13, color: "#c8e6c9",
+                }}>
+                  <span>{s.emoji}</span> {s.label}
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 4 }}>
+                  <span style={{ color: "#9ab89a" }}>Revenue</span>
+                  <span style={{ color: "#4ade80", fontWeight: 700 }}>{fmt(siteRev)}</span>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 8 }}>
+                  <span style={{ color: "#9ab89a" }}>Expenses</span>
+                  <span style={{ color: "#f87171", fontWeight: 700 }}>{fmt(siteExp)}</span>
+                </div>
+                <div style={{
+                  display: "flex", justifyContent: "space-between", fontSize: 12,
+                  paddingTop: 8, borderTop: "1px solid #1e3320",
+                }}>
+                  <span style={{ color: "#c8e6c9", fontWeight: 700 }}>Net</span>
+                  <span style={{
+                    fontWeight: 800, color: siteNet >= 0 ? "#4ade80" : "#f87171",
+                  }}>
+                    {siteNet >= 0 ? "+" : "−"}{fmt(Math.abs(siteNet))}
+                  </span>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
 

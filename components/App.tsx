@@ -104,6 +104,15 @@ export default function App() {
       if (source === "mongodb") {
         flash("🟢 Connected to database", "info", 2000);
       }
+      try {
+        const res = await fetch("/api/sheets/status");
+        const { configured } = await res.json();
+        if (configured) {
+          flash("🟢 Synced to Google Sheets", "info", 2000);
+        }
+      } catch {
+        // Sheets status check is non-critical — ignore failures silently.
+      }
     })();
   }, []);
 

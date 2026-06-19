@@ -76,22 +76,25 @@ const LEGACY_DEPT_TO_PRODUCT: Record<string, string> = {
 };
 
 /**
- * Ensure every transaction has a string id (older versions used numeric ids)
- * and that revenue transactions carry the new `product` field. Older data
- * (recorded before the Department → Product rework) only has `dept`, which
- * would otherwise make every revenue entry invisible in Product-based
- * charts and totals.
+ * Ensure every transaction has a string id (older versions used numeric ids),
+ * that revenue transactions carry the new `product` field, and that any
+ * transaction using the old, meals-only `mealSite` field has it folded into
+ * the general `site` field (which now applies to every transaction kind).
  */
 function normalize(state: AppState): AppState {
   return {
     ...state,
     transactions: state.transactions.map((t) => {
-      const raw = t as Transaction & { dept?: string };
+      const raw = t as Transaction & { dept?: string; mealSite?: string };
       const migrated = { ...raw, id: String(raw.id) };
       if (!migrated.product && raw.dept) {
         migrated.product = LEGACY_DEPT_TO_PRODUCT[raw.dept] as ProductId | undefined;
       }
+      if (!migrated.site && raw.mealSite) {
+        migrated.site = raw.mealSite as Transaction["site"];
+      }
       delete (migrated as { dept?: string }).dept;
+      delete (migrated as { mealSite?: string }).mealSite;
       return migrated as Transaction;
     }),
   };
@@ -218,12 +221,32 @@ export function byCategory(
   return out;
 }
 
+/**
+ * Revenue or expense totals grouped by site, across both kinds at once —
+ * { siteId: { revenue, expense } } — so the dashboard can show a full
+ * picture of money in vs. money out per location.
+ */
+export function bySite(
+  txs: Transaction[],
+  siteIds: string[]
+): Record<string, { revenue: number; expense: number }> {
+  const out: Record<string, { revenue: number; expense: number }> = {};
+  siteIds.forEach((id) => { out[id] = { revenue: 0, expense: 0 }; });
+  txs.forEach((t) => {
+    if (t.kind !== "revenue" && t.kind !== "expense") return;
+    if (!t.site) return;
+    if (!out[t.site]) out[t.site] = { revenue: 0, expense: 0 };
+    out[t.site][t.kind] += t.amount;
+  });
+  return out;
+}
+
 export function mealsBySiteToday(txs: Transaction[]): Record<string, number> {
   const out: Record<string, number> = {};
   txs
     .filter((t) => t.kind === "expense" && t.category === "Meals (Staff)")
     .forEach((t) => {
-      const key = t.mealSite ?? "unknown";
+      const key = t.site ?? "unknown";
       out[key] = (out[key] ?? 0) + t.amount;
     });
   return out;

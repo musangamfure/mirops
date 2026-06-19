@@ -12,13 +12,13 @@ export interface Transaction {
   date: string;          // YYYY-MM-DD
   amount: number;
   note: string;
+  // site applies to both revenue and expense entries
+  site?: SiteId;
   // revenue fields
   product?: ProductId;
-  site?: SiteId;
   // expense fields
   category?: ExpenseCat;
   // meals
-  mealSite?: SiteId;
   mealSession?: MealSession;
   // top-up (no product/category/site needed)
 }
@@ -37,7 +37,6 @@ export interface EntryForm {
   product: ProductId;
   site: SiteId;
   category: ExpenseCat | "";
-  mealSite: SiteId;
   mealSession: MealSession;
   amount: string;
   note: string;

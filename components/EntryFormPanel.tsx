@@ -10,7 +10,7 @@ import type { AppAction, EntryForm } from "@/lib/types";
 
 const EMPTY_FORM: EntryForm = {
   kind: "revenue", product: "tubes", site: "mageragere",
-  category: "", mealSite: "mageragere", mealSession: "Lunch",
+  category: "", mealSession: "Lunch",
   amount: "", note: "",
 };
 
@@ -80,10 +80,9 @@ export function EntryFormPanel({
       payload: {
         kind: form.kind, date: activeDate, amount: amt,
         note: form.note.trim(),
+        site: form.site,
         product: form.kind === "revenue" ? form.product : undefined,
-        site: form.kind === "revenue" ? form.site : undefined,
         category: isExpense ? form.category : undefined,
-        mealSite: isMeal ? form.mealSite : undefined,
         mealSession: isMeal ? form.mealSession : undefined,
       },
     });
@@ -176,107 +175,101 @@ export function EntryFormPanel({
           </div>
         )}
 
-        {/* EXPENSE CATEGORY (editable) */}
+        {/* EXPENSE: Category + Site */}
         {isExpense && (
-          <div style={{ marginBottom: 16 }}>
-            <label style={labelSt}>Expense Category</label>
-            {!addingCat ? (
-              <div style={{ display: "flex", gap: 8 }}>
-                <select
-                  value={form.category}
-                  onChange={(e) => setF("category", e.target.value as EntryForm["category"])}
-                  style={{ ...selStyle, flex: 1 }}
-                >
-                  <option value="">Select category…</option>
-                  {categories.map((c) => <option key={c} value={c}>{c}</option>)}
-                </select>
-                <button
-                  type="button"
-                  onClick={() => setAddingCat(true)}
-                  title="Add new category"
-                  style={{
-                    flexShrink: 0, width: 38,
-                    border: "1px solid #2d4a2d", borderRadius: 8,
-                    background: "#162214", color: "#4ade80",
-                    fontSize: 16, fontWeight: 700, cursor: "pointer",
-                  }}
-                >+</button>
-              </div>
-            ) : (
-              <div style={{ display: "flex", gap: 8 }}>
-                <input
-                  type="text"
-                  autoFocus
-                  placeholder="New category name…"
-                  value={newCat}
-                  onChange={(e) => setNewCat(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleAddCategory()}
-                  style={{ flex: 1 }}
-                />
-                <button
-                  type="button"
-                  onClick={handleAddCategory}
-                  style={{
-                    flexShrink: 0, padding: "0 14px",
-                    border: "none", borderRadius: 8,
-                    background: "#4a7c59", color: "white",
-                    fontSize: 13, fontWeight: 700, cursor: "pointer",
-                    fontFamily: "Georgia, serif",
-                  }}
-                >Add</button>
-                <button
-                  type="button"
-                  onClick={() => { setAddingCat(false); setNewCat(""); }}
-                  style={{
-                    flexShrink: 0, width: 38,
-                    border: "1px solid #2d4a2d", borderRadius: 8,
-                    background: "transparent", color: "#9ab89a",
-                    fontSize: 14, cursor: "pointer",
-                  }}
-                >×</button>
-              </div>
-            )}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 16 }}>
+            <div>
+              <label style={labelSt}>Expense Category</label>
+              {!addingCat ? (
+                <div style={{ display: "flex", gap: 8 }}>
+                  <select
+                    value={form.category}
+                    onChange={(e) => setF("category", e.target.value as EntryForm["category"])}
+                    style={{ ...selStyle, flex: 1 }}
+                  >
+                    <option value="">Select category…</option>
+                    {categories.map((c) => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() => setAddingCat(true)}
+                    title="Add new category"
+                    style={{
+                      flexShrink: 0, width: 38,
+                      border: "1px solid #2d4a2d", borderRadius: 8,
+                      background: "#162214", color: "#4ade80",
+                      fontSize: 16, fontWeight: 700, cursor: "pointer",
+                    }}
+                  >+</button>
+                </div>
+              ) : (
+                <div style={{ display: "flex", gap: 8 }}>
+                  <input
+                    type="text"
+                    autoFocus
+                    placeholder="New category…"
+                    value={newCat}
+                    onChange={(e) => setNewCat(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleAddCategory()}
+                    style={{ flex: 1 }}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddCategory}
+                    style={{
+                      flexShrink: 0, padding: "0 12px",
+                      border: "none", borderRadius: 8,
+                      background: "#4a7c59", color: "white",
+                      fontSize: 13, fontWeight: 700, cursor: "pointer",
+                      fontFamily: "Georgia, serif",
+                    }}
+                  >Add</button>
+                  <button
+                    type="button"
+                    onClick={() => { setAddingCat(false); setNewCat(""); }}
+                    style={{
+                      flexShrink: 0, width: 34,
+                      border: "1px solid #2d4a2d", borderRadius: 8,
+                      background: "transparent", color: "#9ab89a",
+                      fontSize: 14, cursor: "pointer",
+                    }}
+                  >×</button>
+                </div>
+              )}
+            </div>
+            <div>
+              <label style={labelSt}>Site</label>
+              <select
+                value={form.site}
+                onChange={(e) => setF("site", e.target.value as EntryForm["site"])}
+                style={selStyle}
+              >
+                {SITES.map((s) => (
+                  <option key={s.id} value={s.id}>{s.emoji} {s.label}</option>
+                ))}
+              </select>
+            </div>
           </div>
         )}
 
-        {/* MEAL DETAILS */}
+        {/* MEAL SESSION (site already collected above) */}
         {isMeal && (
           <div style={{
             background: "#160e00", border: "1px solid #78460a44",
             borderRadius: 12, padding: "16px", marginBottom: 16,
           }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: "#f59e0b", marginBottom: 14,
-              textTransform: "uppercase", letterSpacing: 0.8 }}>
-              🍽 Meal Details
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-              <div>
-                <label style={{ ...labelSt, color: "#b45309" }}>Meal Site</label>
-                <select
-                  value={form.mealSite}
-                  onChange={(e) => setF("mealSite", e.target.value as EntryForm["mealSite"])}
-                  style={{ ...selStyle, borderColor: "#78460a", background: "#1a0e00", color: "#f59e0b" }}
-                >
-                  {SITES.map((s) => (
-                    <option key={s.id} value={s.id}>{s.emoji} {s.label}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label style={{ ...labelSt, color: "#b45309" }}>Session</label>
-                <select
-                  value={form.mealSession}
-                  onChange={(e) => setF("mealSession", e.target.value as EntryForm["mealSession"])}
-                  style={{ ...selStyle, borderColor: "#78460a", background: "#1a0e00", color: "#f59e0b" }}
-                >
-                  {MEAL_SESSIONS.map((sess) => (
-                    <option key={sess} value={sess}>
-                      {sess === "Breakfast" ? "🌅" : sess === "Lunch" ? "☀️" : "🌙"} {sess}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
+            <label style={{ ...labelSt, color: "#b45309" }}>🍽 Meal Session</label>
+            <select
+              value={form.mealSession}
+              onChange={(e) => setF("mealSession", e.target.value as EntryForm["mealSession"])}
+              style={{ ...selStyle, borderColor: "#78460a", background: "#1a0e00", color: "#f59e0b" }}
+            >
+              {MEAL_SESSIONS.map((sess) => (
+                <option key={sess} value={sess}>
+                  {sess === "Breakfast" ? "🌅" : sess === "Lunch" ? "☀️" : "🌙"} {sess}
+                </option>
+              ))}
+            </select>
           </div>
         )}
 

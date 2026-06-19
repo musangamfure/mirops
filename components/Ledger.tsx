@@ -123,10 +123,7 @@ export function Ledger({
       if (filterProduct !== "all" && t.product !== filterProduct) return false;
       if (filterCategory !== "all" && t.category !== filterCategory) return false;
       if (filterKind !== "all" && t.kind !== filterKind) return false;
-      if (filterSite !== "all") {
-        const siteId = t.category === "Meals (Staff)" ? t.mealSite : t.site;
-        if (siteId !== filterSite) return false;
-      }
+      if (filterSite !== "all" && t.site !== filterSite) return false;
       if (filterDateFrom && t.date < filterDateFrom) return false;
       if (filterDateTo && t.date > filterDateTo) return false;
       if (search.trim()) {
