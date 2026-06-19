@@ -537,12 +537,17 @@ export function Dashboard({
   const recentTx = dayTx.filter((t) => t.kind !== "float_topup").slice(0, 12);
   const topupTx = dayTx.filter((t) => t.kind === "float_topup");
 
-  const kpis = [
+  const kpisDesktop = [
     { label: "Revenue",  value: fmt(dayRev), icon: "💹", accent: "#2d6a4f" },
     { label: "Expenses", value: fmt(dayExp), icon: "💸", accent: "#7f1d1d" },
     { label: "Net",      value: fmt(net),    icon: "📊", accent: net >= 0 ? "#1b4332" : "#7f1d1d" },
     { label: "Entries",  value: revenueEntries + expenseEntries, icon: "📝", accent: "#4a7c59" },
   ];
+  const kpisMobile = [
+    { label: "Revenue",  value: fmt(dayRev), icon: "💹", accent: "#2d6a4f" },
+    { label: "Expenses", value: fmt(dayExp), icon: "💸", accent: "#7f1d1d" },
+  ];
+  const kpis = isMobile ? kpisMobile : kpisDesktop;
 
   return (
     <div>
@@ -607,7 +612,7 @@ export function Dashboard({
 
       {/* Float panel */}
       <div style={{ marginBottom: 20 }}>
-        <FloatPanel state={state} dispatch={dispatch} activeDate={activeDate} />
+        <FloatPanel state={state} dispatch={dispatch} activeDate={activeDate} isMobile={isMobile} />
       </div>
 
       {/* Dept charts — stacked on mobile, side by side on desktop */}
