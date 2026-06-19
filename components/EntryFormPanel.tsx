@@ -1,14 +1,15 @@
 "use client";
 
-import { useState, type Dispatch } from "react";
+import { useState, useEffect } from "react";
+import type { Dispatch } from "react";
 import {
-  DEPARTMENTS, SITES, EXPENSE_CATS, MEAL_SESSIONS,
+  PRODUCTS, SITES, MEAL_SESSIONS,
 } from "@/lib/constants";
-import type { ExpenseCat } from "@/lib/constants";
+import { loadCategories, saveCategories } from "@/lib/categories";
 import type { AppAction, EntryForm } from "@/lib/types";
 
 const EMPTY_FORM: EntryForm = {
-  kind: "revenue", dept: "tubes", site: "mageragere",
+  kind: "revenue", product: "tubes", site: "mageragere",
   category: "", mealSite: "mageragere", mealSession: "Lunch",
   amount: "", note: "",
 };
@@ -28,6 +29,13 @@ export function EntryFormPanel({
 }) {
   const [form, setForm] = useState<EntryForm>(EMPTY_FORM);
   const [error, setError] = useState("");
+  const [categories, setCategories] = useState<string[]>([]);
+  const [addingCat, setAddingCat] = useState(false);
+  const [newCat, setNewCat] = useState("");
+
+  useEffect(() => {
+    setCategories(loadCategories());
+  }, []);
 
   function setF<K extends keyof EntryForm>(key: K, val: EntryForm[K]) {
     setForm((f) => ({ ...f, [key]: val }));
@@ -37,6 +45,23 @@ export function EntryFormPanel({
   const isMeal = form.kind === "expense" && form.category === "Meals (Staff)";
   const isOther = form.kind === "expense" && form.category === "Other";
   const isExpense = form.kind === "expense";
+
+  function handleAddCategory() {
+    const trimmed = newCat.trim();
+    if (!trimmed) return;
+    if (categories.includes(trimmed)) {
+      setF("category", trimmed);
+      setAddingCat(false);
+      setNewCat("");
+      return;
+    }
+    const updated = [...categories, trimmed];
+    setCategories(updated);
+    saveCategories(updated);
+    setF("category", trimmed);
+    setAddingCat(false);
+    setNewCat("");
+  }
 
   function submit() {
     const amt = Number(form.amount);
@@ -50,13 +75,14 @@ export function EntryFormPanel({
       setError("Add a description for Other"); return;
     }
 
-    const category: ExpenseCat | undefined = isExpense ? (form.category as ExpenseCat) : undefined;
     dispatch({
       type: "ADD_TX",
       payload: {
         kind: form.kind, date: activeDate, amount: amt,
-        note: form.note.trim(), dept: form.dept, site: form.site,
-        category,
+        note: form.note.trim(),
+        product: form.kind === "revenue" ? form.product : undefined,
+        site: form.kind === "revenue" ? form.site : undefined,
+        category: isExpense ? form.category : undefined,
         mealSite: isMeal ? form.mealSite : undefined,
         mealSession: isMeal ? form.mealSession : undefined,
       },
@@ -83,9 +109,7 @@ export function EntryFormPanel({
     paddingRight: 32,
   };
 
-  // Find emoji for selected site/dept
-  const selectedSite = SITES.find((s) => s.id === form.site);
-  const selectedDept = DEPARTMENTS.find((d) => d.id === form.dept);
+  const selectedProduct = PRODUCTS.find((p) => p.id === form.product);
 
   return (
     <div>
@@ -100,12 +124,45 @@ export function EntryFormPanel({
         background: "#111e0f", border: "1px solid #1e3320",
         borderRadius: 14, padding: "22px 22px",
       }}>
-        {/* ROW: Site + Type */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 16 }}>
-          {/* SITE */}
-          <div>
-            <label style={labelSt}>Site</label>
-            <div style={{ position: "relative" }}>
+        {/* TYPE */}
+        <div style={{ marginBottom: 16 }}>
+          <label style={labelSt}>Type</label>
+          <select
+            value={form.kind}
+            onChange={(e) => setF("kind", e.target.value as EntryForm["kind"])}
+            style={{
+              ...selStyle,
+              color: form.kind === "revenue" ? "#4ade80" : "#f87171",
+              borderColor: form.kind === "revenue" ? "#2d6a4f" : "#7f1d1d",
+              background: form.kind === "revenue" ? "#0f1a0f" : "#1a0a0a",
+            }}
+          >
+            <option value="revenue">💹 Revenue</option>
+            <option value="expense">💸 Expense</option>
+          </select>
+        </div>
+
+        {/* REVENUE: Product + Site */}
+        {!isExpense && (
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 16 }}>
+            <div>
+              <label style={labelSt}>Product</label>
+              <select
+                value={form.product}
+                onChange={(e) => setF("product", e.target.value as EntryForm["product"])}
+                style={{
+                  ...selStyle,
+                  borderColor: selectedProduct?.color ?? "#2d4a2d",
+                  color: selectedProduct?.color ?? "#c8e6c9",
+                }}
+              >
+                {PRODUCTS.map((p) => (
+                  <option key={p.id} value={p.id}>{p.emoji} {p.label}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label style={labelSt}>Site</label>
               <select
                 value={form.site}
                 onChange={(e) => setF("site", e.target.value as EntryForm["site"])}
@@ -117,60 +174,68 @@ export function EntryFormPanel({
               </select>
             </div>
           </div>
+        )}
 
-          {/* TYPE */}
-          <div>
-            <label style={labelSt}>Type</label>
-            <div style={{ position: "relative" }}>
-              <select
-                value={form.kind}
-                onChange={(e) => setF("kind", e.target.value as EntryForm["kind"])}
-                style={{
-                  ...selStyle,
-                  color: form.kind === "revenue" ? "#4ade80" : "#f87171",
-                  borderColor: form.kind === "revenue" ? "#2d6a4f" : "#7f1d1d",
-                  background: form.kind === "revenue" ? "#0f1a0f" : "#1a0a0a",
-                }}
-              >
-                <option value="revenue">💹 Revenue</option>
-                <option value="expense">💸 Expense</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        {/* DEPARTMENT */}
-        <div style={{ marginBottom: 16 }}>
-          <label style={labelSt}>Department</label>
-          <div style={{ position: "relative" }}>
-            <select
-              value={form.dept}
-              onChange={(e) => setF("dept", e.target.value as EntryForm["dept"])}
-              style={{
-                ...selStyle,
-                borderColor: selectedDept?.color ?? "#2d4a2d",
-                color: selectedDept?.color ?? "#c8e6c9",
-              }}
-            >
-              {DEPARTMENTS.map((d) => (
-                <option key={d.id} value={d.id}>{d.emoji} {d.label}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        {/* EXPENSE CATEGORY */}
+        {/* EXPENSE CATEGORY (editable) */}
         {isExpense && (
           <div style={{ marginBottom: 16 }}>
             <label style={labelSt}>Expense Category</label>
-            <select
-              value={form.category}
-              onChange={(e) => setF("category", e.target.value as EntryForm["category"])}
-              style={selStyle}
-            >
-              <option value="">Select category…</option>
-              {EXPENSE_CATS.map((c) => <option key={c} value={c}>{c}</option>)}
-            </select>
+            {!addingCat ? (
+              <div style={{ display: "flex", gap: 8 }}>
+                <select
+                  value={form.category}
+                  onChange={(e) => setF("category", e.target.value as EntryForm["category"])}
+                  style={{ ...selStyle, flex: 1 }}
+                >
+                  <option value="">Select category…</option>
+                  {categories.map((c) => <option key={c} value={c}>{c}</option>)}
+                </select>
+                <button
+                  type="button"
+                  onClick={() => setAddingCat(true)}
+                  title="Add new category"
+                  style={{
+                    flexShrink: 0, width: 38,
+                    border: "1px solid #2d4a2d", borderRadius: 8,
+                    background: "#162214", color: "#4ade80",
+                    fontSize: 16, fontWeight: 700, cursor: "pointer",
+                  }}
+                >+</button>
+              </div>
+            ) : (
+              <div style={{ display: "flex", gap: 8 }}>
+                <input
+                  type="text"
+                  autoFocus
+                  placeholder="New category name…"
+                  value={newCat}
+                  onChange={(e) => setNewCat(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleAddCategory()}
+                  style={{ flex: 1 }}
+                />
+                <button
+                  type="button"
+                  onClick={handleAddCategory}
+                  style={{
+                    flexShrink: 0, padding: "0 14px",
+                    border: "none", borderRadius: 8,
+                    background: "#4a7c59", color: "white",
+                    fontSize: 13, fontWeight: 700, cursor: "pointer",
+                    fontFamily: "Georgia, serif",
+                  }}
+                >Add</button>
+                <button
+                  type="button"
+                  onClick={() => { setAddingCat(false); setNewCat(""); }}
+                  style={{
+                    flexShrink: 0, width: 38,
+                    border: "1px solid #2d4a2d", borderRadius: 8,
+                    background: "transparent", color: "#9ab89a",
+                    fontSize: 14, cursor: "pointer",
+                  }}
+                >×</button>
+              </div>
+            )}
           </div>
         )}
 

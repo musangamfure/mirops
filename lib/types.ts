@@ -1,6 +1,6 @@
-import type { DeptId, SiteId, ExpenseCat, MealSession } from "./constants";
+import type { ProductId, SiteId, ExpenseCat, MealSession } from "./constants";
 
-export type { DeptId, SiteId };
+export type { ProductId, SiteId };
 
 
 // ─── TRANSACTION ─────────────────────────────────────────────────────────────
@@ -12,15 +12,15 @@ export interface Transaction {
   date: string;          // YYYY-MM-DD
   amount: number;
   note: string;
-  // revenue / expense fields
-  dept?: DeptId;
+  // revenue fields
+  product?: ProductId;
   site?: SiteId;
-  // expense-specific
+  // expense fields
   category?: ExpenseCat;
   // meals
   mealSite?: SiteId;
   mealSession?: MealSession;
-  // top-up (no dept/site needed)
+  // top-up (no product/category/site needed)
 }
 
 // ─── APP STATE ───────────────────────────────────────────────────────────────
@@ -34,7 +34,7 @@ export interface AppState {
 // ─── FORM STATE (for Record Entry) ───────────────────────────────────────────
 export interface EntryForm {
   kind: "revenue" | "expense";
-  dept: DeptId;
+  product: ProductId;
   site: SiteId;
   category: ExpenseCat | "";
   mealSite: SiteId;

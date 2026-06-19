@@ -1,5 +1,6 @@
 import type { AppState, AppAction, Transaction } from "./types";
-import { DEPARTMENTS, LOW_FLOAT_THRESHOLD } from "./constants";
+import type { ProductId } from "./constants";
+import { PRODUCTS, LOW_FLOAT_THRESHOLD } from "./constants";
 
 // ─── DATE HELPERS ─────────────────────────────────────────────────────────────
 /**
@@ -59,11 +60,40 @@ export function initState(): AppState {
   return { transactions: [], activeDate: todayStr(), floats: {} };
 }
 
-/** Ensure every transaction has a string id (older versions used numeric ids) */
+/**
+ * Maps legacy department ids (pre-Product rework) to their closest current
+ * product id. "spawn" (Spawn Sales) had no direct successor in the new
+ * 5-product lineup, so it's folded into "fresh" (Fresh Mushrooms) — the
+ * nearest related product line.
+ */
+const LEGACY_DEPT_TO_PRODUCT: Record<string, string> = {
+  tubes: "tubes",
+  training: "trainings",
+  spawn: "fresh",
+  fresh: "fresh",
+  cotton: "cotton",
+  kitchen: "kitchen",
+};
+
+/**
+ * Ensure every transaction has a string id (older versions used numeric ids)
+ * and that revenue transactions carry the new `product` field. Older data
+ * (recorded before the Department → Product rework) only has `dept`, which
+ * would otherwise make every revenue entry invisible in Product-based
+ * charts and totals.
+ */
 function normalize(state: AppState): AppState {
   return {
     ...state,
-    transactions: state.transactions.map((t) => ({ ...t, id: String(t.id) })),
+    transactions: state.transactions.map((t) => {
+      const raw = t as Transaction & { dept?: string };
+      const migrated = { ...raw, id: String(raw.id) };
+      if (!migrated.product && raw.dept) {
+        migrated.product = LEGACY_DEPT_TO_PRODUCT[raw.dept] as ProductId | undefined;
+      }
+      delete (migrated as { dept?: string }).dept;
+      return migrated as Transaction;
+    }),
   };
 }
 
@@ -159,16 +189,31 @@ export function sumKind(
     .reduce((s, t) => s + t.amount, 0);
 }
 
-export function byDept(
+export function byProduct(
   txs: Transaction[],
-  kind: "revenue" | "expense"
+  kind: "revenue"
 ): Record<string, number> {
   const out: Record<string, number> = {};
-  DEPARTMENTS.forEach((d) => { out[d.id] = 0; });
+  PRODUCTS.forEach((p) => { out[p.id] = 0; });
   txs
     .filter((t) => t.kind === kind)
     .forEach((t) => {
-      if (t.dept) out[t.dept] = (out[t.dept] ?? 0) + t.amount;
+      if (t.product) out[t.product] = (out[t.product] ?? 0) + t.amount;
+    });
+  return out;
+}
+
+export function byCategory(
+  txs: Transaction[],
+  kind: "expense",
+  categories: string[]
+): Record<string, number> {
+  const out: Record<string, number> = {};
+  categories.forEach((c) => { out[c] = 0; });
+  txs
+    .filter((t) => t.kind === kind)
+    .forEach((t) => {
+      if (t.category) out[t.category] = (out[t.category] ?? 0) + t.amount;
     });
   return out;
 }

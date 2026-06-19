@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { DEPARTMENTS, SITES, DEFAULT_EMPLOYEES } from "@/lib/constants";
+import { PRODUCTS, SITES, DEFAULT_EMPLOYEES } from "@/lib/constants";
+import { loadCategories, saveCategories } from "@/lib/categories";
 import type { AppState } from "@/lib/types";
 import { fmt } from "@/lib/store";
 
@@ -38,10 +39,14 @@ function Card({ children, style }: { children: React.ReactNode; style?: React.CS
   );
 }
 
-// ── Employee Modal ─────────────────────────────────────────────
-function EmployeeModal({
-  initial, onSave, onCancel,
+// ── Generic Name Modal (used for both Employees and Categories) ─
+function NameModal({
+  title, label, placeholder, submitLabel, initial, onSave, onCancel,
 }: {
+  title: string;
+  label: string;
+  placeholder: string;
+  submitLabel: string;
   initial?: string;
   onSave: (name: string) => void;
   onCancel: () => void;
@@ -51,7 +56,7 @@ function EmployeeModal({
 
   function handleSave() {
     const trimmed = name.trim();
-    if (!trimmed) { setError("Name is required"); return; }
+    if (!trimmed) { setError(`${label} is required`); return; }
     onSave(trimmed);
   }
 
@@ -69,7 +74,7 @@ function EmployeeModal({
       }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
           <div style={{ fontSize: 16, fontWeight: "bold", color: "#c8e6c9" }}>
-            {initial ? "✏ Edit Employee" : "➕ Add Employee"}
+            {title}
           </div>
           <button onClick={onCancel} style={{
             width: 30, height: 30, borderRadius: "50%", border: "none",
@@ -82,11 +87,11 @@ function EmployeeModal({
           <label style={{
             display: "block", fontSize: 11, color: "#9ab89a", marginBottom: 6,
             textTransform: "uppercase", letterSpacing: 0.8,
-          }}>Full Name</label>
+          }}>{label}</label>
           <input
             type="text"
             value={name}
-            placeholder="e.g. Jean Paul"
+            placeholder={placeholder}
             autoFocus
             onChange={(e) => { setName(e.target.value); setError(""); }}
             onKeyDown={(e) => e.key === "Enter" && handleSave()}
@@ -105,7 +110,7 @@ function EmployeeModal({
             flex: 2, padding: 12, borderRadius: 10, border: "none",
             background: "#4a7c59", color: "white", fontSize: 14,
             fontWeight: "bold", cursor: "pointer", fontFamily: "Georgia, serif",
-          }}>{initial ? "Save Changes" : "Add Employee"}</button>
+          }}>{initial ? "Save Changes" : submitLabel}</button>
         </div>
       </div>
     </div>
@@ -113,8 +118,8 @@ function EmployeeModal({
 }
 
 // ── Delete Confirm ─────────────────────────────────────────────
-function DeleteConfirm({ name, onConfirm, onCancel }: {
-  name: string; onConfirm: () => void; onCancel: () => void;
+function DeleteConfirm({ title, name, onConfirm, onCancel }: {
+  title: string; name: string; onConfirm: () => void; onCancel: () => void;
 }) {
   return (
     <div style={{
@@ -130,7 +135,7 @@ function DeleteConfirm({ name, onConfirm, onCancel }: {
       }}>
         <div style={{ fontSize: 32, marginBottom: 12 }}>🗑</div>
         <div style={{ fontSize: 16, fontWeight: "bold", color: "#c8e6c9", marginBottom: 6 }}>
-          Remove Employee?
+          {title}
         </div>
         <div style={{ fontSize: 13, color: "#6a9c6a", marginBottom: 8 }}>{name}</div>
         <div style={{ fontSize: 12, color: "#4a7c59", marginBottom: 24 }}>This cannot be undone.</div>
@@ -152,7 +157,7 @@ function DeleteConfirm({ name, onConfirm, onCancel }: {
 }
 
 // ── Employee Three-Dots Menu ───────────────────────────────────
-function EmpMenuBtn({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => void }) {
+function MenuBtn({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => void }) {
   const [open, setOpen] = useState(false);
 
   const handleBlur = (e: React.FocusEvent<HTMLDivElement>) => {
@@ -218,8 +223,14 @@ export function StaffOps({ state, isMobile }: { state: AppState; isMobile: boole
   const [editTarget, setEditTarget] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
 
+  const [categories, setCategories] = useState<string[]>([]);
+  const [catAddOpen, setCatAddOpen] = useState(false);
+  const [catEditTarget, setCatEditTarget] = useState<string | null>(null);
+  const [catDeleteTarget, setCatDeleteTarget] = useState<string | null>(null);
+
   useEffect(() => {
     setEmployees(loadEmployees());
+    setCategories(loadCategories());
   }, []);
 
   function persistAndSet(list: string[]) {
@@ -242,13 +253,40 @@ export function StaffOps({ state, isMobile }: { state: AppState; isMobile: boole
     setDeleteTarget(null);
   }
 
+  function persistAndSetCats(list: string[]) {
+    setCategories(list);
+    saveCategories(list);
+  }
+
+  function handleCatAdd(name: string) {
+    if (categories.includes(name)) { setCatAddOpen(false); return; }
+    persistAndSetCats([...categories, name]);
+    setCatAddOpen(false);
+  }
+
+  function handleCatEdit(oldName: string, newName: string) {
+    persistAndSetCats(categories.map((c) => (c === oldName ? newName : c)));
+    setCatEditTarget(null);
+  }
+
+  function handleCatDelete(name: string) {
+    persistAndSetCats(categories.filter((c) => c !== name));
+    setCatDeleteTarget(null);
+  }
+
   return (
     <div>
       {addOpen && (
-        <EmployeeModal onSave={handleAdd} onCancel={() => setAddOpen(false)} />
+        <NameModal
+          title="➕ Add Employee" label="Full Name" placeholder="e.g. Jean Paul"
+          submitLabel="Add Employee"
+          onSave={handleAdd} onCancel={() => setAddOpen(false)}
+        />
       )}
       {editTarget && (
-        <EmployeeModal
+        <NameModal
+          title="✏ Edit Employee" label="Full Name" placeholder="e.g. Jean Paul"
+          submitLabel="Add Employee"
           initial={editTarget}
           onSave={(name) => handleEdit(editTarget, name)}
           onCancel={() => setEditTarget(null)}
@@ -256,9 +294,35 @@ export function StaffOps({ state, isMobile }: { state: AppState; isMobile: boole
       )}
       {deleteTarget && (
         <DeleteConfirm
+          title="Remove Employee?"
           name={deleteTarget}
           onConfirm={() => handleDelete(deleteTarget)}
           onCancel={() => setDeleteTarget(null)}
+        />
+      )}
+
+      {catAddOpen && (
+        <NameModal
+          title="➕ Add Category" label="Category Name" placeholder="e.g. Insurance"
+          submitLabel="Add Category"
+          onSave={handleCatAdd} onCancel={() => setCatAddOpen(false)}
+        />
+      )}
+      {catEditTarget && (
+        <NameModal
+          title="✏ Edit Category" label="Category Name" placeholder="e.g. Insurance"
+          submitLabel="Add Category"
+          initial={catEditTarget}
+          onSave={(name) => handleCatEdit(catEditTarget, name)}
+          onCancel={() => setCatEditTarget(null)}
+        />
+      )}
+      {catDeleteTarget && (
+        <DeleteConfirm
+          title="Remove Category?"
+          name={catDeleteTarget}
+          onConfirm={() => handleCatDelete(catDeleteTarget)}
+          onCancel={() => setCatDeleteTarget(null)}
         />
       )}
 
@@ -308,7 +372,7 @@ export function StaffOps({ state, isMobile }: { state: AppState; isMobile: boole
               <div style={{ flex: 1, fontSize: 13, color: "#c8e6c9", fontWeight: 600 }}>{emp}</div>
               <Badge color="#40916C">Active</Badge>
               {/* Three-dots menu */}
-              <EmpMenuBtn
+              <MenuBtn
                 onEdit={() => setEditTarget(emp)}
                 onDelete={() => setDeleteTarget(emp)}
               />
@@ -316,39 +380,121 @@ export function StaffOps({ state, isMobile }: { state: AppState; isMobile: boole
           ))}
         </Card>
 
-        {/* P&L BY DEPARTMENT */}
+        {/* CATEGORIES */}
+        <Card>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+            <div style={{ fontWeight: 700, fontSize: 13, color: "#f87171" }}>
+              🏷 Expense Categories — {categories.length}
+            </div>
+            <button
+              onClick={() => setCatAddOpen(true)}
+              style={{
+                display: "flex", alignItems: "center", gap: 5,
+                padding: "5px 12px", borderRadius: 8,
+                border: "1px solid #2d4a2d", background: "#162214",
+                color: "#f87171", fontSize: 12, fontWeight: 700,
+                cursor: "pointer", fontFamily: "Georgia, serif",
+              }}
+            >
+              ➕ Add
+            </button>
+          </div>
+          {categories.length === 0 && (
+            <div style={{ color: "#3a5c3a", fontSize: 13, textAlign: "center", padding: "16px 0", fontStyle: "italic" }}>
+              No categories yet. Add one above.
+            </div>
+          )}
+          {categories.map((cat) => (
+            <div key={cat} style={{
+              display: "flex", alignItems: "center", gap: 10,
+              padding: "8px 0", borderBottom: "1px solid #1e3320",
+            }}>
+              <div style={{
+                width: 34, height: 34, background: "#3a0a0a",
+                borderRadius: "50%", display: "flex", alignItems: "center",
+                justifyContent: "center", fontWeight: 800, color: "#f87171", fontSize: 13,
+                flexShrink: 0,
+              }}>
+                {cat[0]}
+              </div>
+              <div style={{ flex: 1, fontSize: 13, color: "#c8e6c9", fontWeight: 600 }}>{cat}</div>
+              <MenuBtn
+                onEdit={() => setCatEditTarget(cat)}
+                onDelete={() => setCatDeleteTarget(cat)}
+              />
+            </div>
+          ))}
+        </Card>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 16, marginBottom: 16 }}>
+        {/* REVENUE BY PRODUCT */}
         <Card>
           <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 14, color: "#c8e6c9" }}>
-            📈 All-Time P&L by Department
+            📈 All-Time Revenue by Product
           </div>
-          {DEPARTMENTS.map((d) => {
-            const dRev = allTx.filter((t) => t.dept === d.id && t.kind === "revenue").reduce((s, t) => s + t.amount, 0);
-            const dExp = allTx.filter((t) => t.dept === d.id && t.kind === "expense").reduce((s, t) => s + t.amount, 0);
-            const net = dRev - dExp;
-            return (
-              <div key={d.id} style={{ marginBottom: 13 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: "#9ab89a" }}>
-                    {d.emoji} {d.label}
-                  </span>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: net >= 0 ? "#4ade80" : "#f87171" }}>
-                    {net >= 0 ? "+" : "−"}{fmt(Math.abs(net))}
-                  </span>
+          {(() => {
+            const totalRevAll = Math.max(1, ...PRODUCTS.map((p) =>
+              allTx.filter((t) => t.product === p.id && t.kind === "revenue").reduce((s, t) => s + t.amount, 0)
+            ));
+            return PRODUCTS.map((p) => {
+              const pRev = allTx.filter((t) => t.product === p.id && t.kind === "revenue").reduce((s, t) => s + t.amount, 0);
+              return (
+                <div key={p.id} style={{ marginBottom: 13 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: "#9ab89a" }}>
+                      {p.emoji} {p.label}
+                    </span>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: pRev > 0 ? "#4ade80" : "#3a5c3a" }}>
+                      {fmt(pRev)}
+                    </span>
+                  </div>
+                  <div style={{ height: 4, background: "#1e3320", borderRadius: 2, overflow: "hidden" }}>
+                    <div style={{
+                      height: "100%", borderRadius: 2, background: p.color,
+                      width: `${Math.min(100, (pRev / totalRevAll) * 100)}%`,
+                    }} />
+                  </div>
                 </div>
-                <div style={{ display: "flex", gap: 6, fontSize: 11, color: "#6a9c6a" }}>
-                  <span>Rev: <b style={{ color: "#4ade80" }}>{fmt(dRev)}</b></span>
-                  <span style={{ color: "#2d4a2d" }}>·</span>
-                  <span>Exp: <b style={{ color: "#f87171" }}>{fmt(dExp)}</b></span>
+              );
+            });
+          })()}
+        </Card>
+
+        {/* EXPENSES BY CATEGORY */}
+        <Card>
+          <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 14, color: "#c8e6c9" }}>
+            📉 All-Time Expenses by Category
+          </div>
+          {categories.length === 0 && (
+            <div style={{ color: "#3a5c3a", fontSize: 13, textAlign: "center", padding: "16px 0", fontStyle: "italic" }}>
+              No categories defined yet.
+            </div>
+          )}
+          {(() => {
+            const totalExpAll = Math.max(1, ...categories.map((c) =>
+              allTx.filter((t) => t.category === c && t.kind === "expense").reduce((s, t) => s + t.amount, 0)
+            ));
+            return categories.map((c) => {
+              const cExp = allTx.filter((t) => t.category === c && t.kind === "expense").reduce((s, t) => s + t.amount, 0);
+              return (
+                <div key={c} style={{ marginBottom: 13 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: "#9ab89a" }}>{c}</span>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: cExp > 0 ? "#f87171" : "#3a1515" }}>
+                      {fmt(cExp)}
+                    </span>
+                  </div>
+                  <div style={{ height: 4, background: "#1e3320", borderRadius: 2, overflow: "hidden" }}>
+                    <div style={{
+                      height: "100%", borderRadius: 2, background: "#c0392b",
+                      width: `${Math.min(100, (cExp / totalExpAll) * 100)}%`,
+                    }} />
+                  </div>
                 </div>
-                <div style={{ height: 4, background: "#1e3320", borderRadius: 2, marginTop: 5, overflow: "hidden" }}>
-                  <div style={{
-                    height: "100%", borderRadius: 2, background: d.color,
-                    width: `${Math.min(100, dRev > 0 ? (dRev / Math.max(dRev, dExp)) * 100 : 0)}%`,
-                  }} />
-                </div>
-              </div>
-            );
-          })}
+              );
+            });
+          })()}
         </Card>
       </div>
 

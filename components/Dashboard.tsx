@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, type Dispatch } from "react";
-import { DEPARTMENTS, SITES } from "@/lib/constants";
+import { PRODUCTS, SITES } from "@/lib/constants";
+import { loadCategories } from "@/lib/categories";
 import type { AppState, AppAction, Transaction } from "@/lib/types";
 import {
-  fmt, sumKind, byDept, mealsBySiteToday,
+  fmt, sumKind, byProduct, byCategory, mealsBySiteToday,
   getOpeningFloat, getClosingFloat, isLowFloat, isDeficit,
 } from "@/lib/store";
 import { FloatPanel } from "./FloatPanel";
@@ -98,7 +99,7 @@ function EditModal({
     onSave({ amount: n, note: note.trim() });
   };
 
-  const dept = DEPARTMENTS.find((d) => d.id === tx.dept);
+  const product = PRODUCTS.find((p) => p.id === tx.product);
   const site = SITES.find((s) => s.id === (tx.mealSite ?? tx.site));
 
   const panelStyle = isMobile
@@ -137,7 +138,7 @@ function EditModal({
           <div>
             <div style={{ fontSize: 16, fontWeight: "bold", color: "#c8e6c9" }}>✏ Edit Entry</div>
             <div style={{ fontSize: 12, color: "#6a9c6a", marginTop: 4 }}>
-              {dept?.emoji} {dept?.label}
+              {product ? `${product.emoji} ${product.label}` : tx.category}
               {site ? ` · ${site.emoji} ${site.label}` : ""}
             </div>
           </div>
@@ -322,7 +323,7 @@ export function EntryRow({
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [editing, setEditing] = useState(false);
 
-  const dept = DEPARTMENTS.find((d) => d.id === t.dept);
+  const product = PRODUCTS.find((p) => p.id === t.product);
   const siteId = t.category === "Meals (Staff)" ? t.mealSite : t.site;
   const site = SITES.find((s) => s.id === siteId);
 
@@ -330,10 +331,13 @@ export function EntryRow({
     : t.kind === "float_topup" ? "#c4b5fd" : "#f87171";
   const amountSign = t.kind === "revenue" ? "+" : t.kind === "float_topup" ? "+" : "−";
 
-  const label = `${dept?.label ?? "Float Top-up"} · ${fmt(t.amount)}${t.note ? ` · ${t.note}` : ""}`;
+  const primaryLabel = t.kind === "revenue" ? product?.label : t.category;
+  const primaryEmoji = t.kind === "revenue" ? product?.emoji : "💸";
+
+  const label = `${primaryLabel ?? "Float Top-up"} · ${fmt(t.amount)}${t.note ? ` · ${t.note}` : ""}`;
 
   function handleEdit(updated: Partial<Transaction>) {
-    // Delete old, add updated (preserves date/kind/dept/site)
+    // Delete old, add updated (preserves date/kind/product/category/site)
     dispatch({ type: "DEL_TX", id: t.id });
     dispatch({
       type: "ADD_TX",
@@ -376,13 +380,13 @@ export function EntryRow({
         padding: "9px 0", borderBottom: "1px solid #1e3320",
       }}>
         <span style={{ fontSize: 18, flexShrink: 0 }}>
-          {t.kind === "float_topup" ? "💜" : dept?.emoji}
+          {t.kind === "float_topup" ? "💜" : primaryEmoji}
         </span>
 
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 5, flexWrap: "wrap" }}>
             <span style={{ fontWeight: 600, fontSize: 13, color: "#c8e6c9" }}>
-              {t.kind === "float_topup" ? "Float Top-up" : dept?.label}
+              {t.kind === "float_topup" ? "Float Top-up" : primaryLabel}
             </span>
             {site && (
               <span style={{
@@ -395,12 +399,6 @@ export function EntryRow({
                 background: "#b4530922", color: "#b45309", border: "1px solid #b4530944",
                 borderRadius: 6, padding: "1px 7px", fontSize: 11, fontWeight: 600,
               }}>{t.mealSession}</span>
-            )}
-            {t.category && t.category !== "Meals (Staff)" && (
-              <span style={{
-                background: "#88888822", color: "#888", border: "1px solid #88888844",
-                borderRadius: 6, padding: "1px 7px", fontSize: 11, fontWeight: 600,
-              }}>{t.category}</span>
             )}
           </div>
           <div style={{ fontSize: 11, color: "#6a9c6a", marginTop: 2 }}>
@@ -522,10 +520,13 @@ export function Dashboard({
   const opening = getOpeningFloat(state, activeDate);
   const closing = getClosingFloat(state, activeDate);
 
-  const deptRevDay = byDept(dayTx, "revenue");
-  const deptExpDay = byDept(dayTx, "expense");
-  const maxDeptRev = Math.max(1, ...Object.values(deptRevDay));
-  const maxDeptExp = Math.max(1, ...Object.values(deptExpDay));
+  const categories = loadCategories();
+  const productRevDay = byProduct(dayTx, "revenue");
+  const catExpDay = byCategory(dayTx, "expense", categories);
+  const maxProductRev = Math.max(1, ...Object.values(productRevDay));
+  const maxCatExp = Math.max(1, ...Object.values(catExpDay));
+  const activeCats = categories.filter((c) => catExpDay[c] > 0);
+  const catsToShow = activeCats.length > 0 ? activeCats : categories.slice(0, 6);
 
   const meals = mealsBySiteToday(dayTx);
   const revenueEntries = dayTx.filter((t) => t.kind === "revenue").length;
@@ -613,54 +614,52 @@ export function Dashboard({
         gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
         gap: 16, marginBottom: 20,
       }}>
-        {/* Revenue by dept */}
+        {/* Revenue by product */}
         <div style={{
           background: "#111e0f", border: "1px solid #1e3320",
           borderRadius: 14, padding: "18px 20px",
         }}>
           <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 14, color: "#4ade80" }}>
-            Revenue by Department
+            Revenue by Product
           </div>
-          {DEPARTMENTS.map((d) => (
-            <div key={d.id} style={{ marginBottom: 11 }}>
+          {PRODUCTS.map((p) => (
+            <div key={p.id} style={{ marginBottom: 11 }}>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
                 <span style={{ fontSize: 12, display: "flex", alignItems: "center", gap: 5, color: "#9ab89a" }}>
-                  <span>{d.emoji}</span> {d.label}
+                  <span>{p.emoji}</span> {p.label}
                 </span>
                 <span style={{
                   fontWeight: 700, fontSize: 12,
-                  color: deptRevDay[d.id] > 0 ? d.color : "#2d4a2d",
+                  color: productRevDay[p.id] > 0 ? p.color : "#2d4a2d",
                 }}>
-                  {fmt(deptRevDay[d.id])}
+                  {fmt(productRevDay[p.id])}
                 </span>
               </div>
-              <MiniBar value={deptRevDay[d.id]} max={maxDeptRev} color={d.color} />
+              <MiniBar value={productRevDay[p.id]} max={maxProductRev} color={p.color} />
             </div>
           ))}
         </div>
 
-        {/* Expenses by dept */}
+        {/* Expenses by category */}
         <div style={{
           background: "#111e0f", border: "1px solid #1e3320",
           borderRadius: 14, padding: "18px 20px",
         }}>
           <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 14, color: "#f87171" }}>
-            Expenses by Department
+            Expenses by Category
           </div>
-          {DEPARTMENTS.map((d) => (
-            <div key={d.id} style={{ marginBottom: 11 }}>
+          {catsToShow.map((c) => (
+            <div key={c} style={{ marginBottom: 11 }}>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-                <span style={{ fontSize: 12, display: "flex", alignItems: "center", gap: 5, color: "#9ab89a" }}>
-                  <span>{d.emoji}</span> {d.label}
-                </span>
+                <span style={{ fontSize: 12, color: "#9ab89a" }}>{c}</span>
                 <span style={{
                   fontWeight: 700, fontSize: 12,
-                  color: deptExpDay[d.id] > 0 ? "#f87171" : "#3a1515",
+                  color: catExpDay[c] > 0 ? "#f87171" : "#3a1515",
                 }}>
-                  {fmt(deptExpDay[d.id])}
+                  {fmt(catExpDay[c])}
                 </span>
               </div>
-              <MiniBar value={deptExpDay[d.id]} max={maxDeptExp} color="#c0392b" />
+              <MiniBar value={catExpDay[c]} max={maxCatExp} color="#c0392b" />
             </div>
           ))}
         </div>

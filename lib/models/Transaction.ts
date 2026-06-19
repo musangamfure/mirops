@@ -16,7 +16,7 @@ const TransactionSchema = new Schema(
     date: { type: String, required: true }, // YYYY-MM-DD
     amount: { type: Number, required: true },
     note: { type: String, default: "" },
-    dept: { type: String },
+    product: { type: String },
     site: { type: String },
     category: { type: String },
     mealSite: { type: String },
@@ -33,7 +33,7 @@ export interface TransactionDoc {
   date: string;
   amount: number;
   note: string;
-  dept?: string;
+  product?: string;
   site?: string;
   category?: string;
   mealSite?: string;

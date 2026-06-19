@@ -1,14 +1,13 @@
-// ─── DEPARTMENTS ────────────────────────────────────────────────────────────
-export const DEPARTMENTS = [
-  { id: "tubes",    label: "Tube Sales",      emoji: "🧫", color: "#2D6A4F" },
-  { id: "training", label: "Training",         emoji: "🎓", color: "#1B4332" },
-  { id: "spawn",    label: "Spawn Sales",      emoji: "🌱", color: "#40916C" },
-  { id: "fresh",    label: "Fresh Mushrooms",  emoji: "🍄", color: "#52B788" },
-  { id: "cotton",   label: "Cottonseed Hulls", emoji: "🌾", color: "#74C69D" },
-  { id: "kitchen",  label: "Miru Kitchen",     emoji: "🍳", color: "#95D5B2" },
+// ─── PRODUCTS (revenue lines) ────────────────────────────────────────────────
+export const PRODUCTS = [
+  { id: "tubes",   label: "Tubes",             emoji: "🧫", color: "#2D6A4F" },
+  { id: "trainings", label: "Trainings",       emoji: "🎓", color: "#1B4332" },
+  { id: "fresh",   label: "Fresh Mushrooms",    emoji: "🍄", color: "#52B788" },
+  { id: "cotton",  label: "Cottonseed Hulls",   emoji: "🌾", color: "#74C69D" },
+  { id: "kitchen", label: "Miru Kitchen",       emoji: "🍳", color: "#95D5B2" },
 ] as const;
 
-export type DeptId = (typeof DEPARTMENTS)[number]["id"];
+export type ProductId = (typeof PRODUCTS)[number]["id"];
 
 // ─── SITES ──────────────────────────────────────────────────────────────────
 export const SITES = [
@@ -18,8 +17,8 @@ export const SITES = [
 
 export type SiteId = (typeof SITES)[number]["id"];
 
-// ─── EXPENSE CATEGORIES ─────────────────────────────────────────────────────
-export const EXPENSE_CATS = [
+// ─── EXPENSE CATEGORIES (user-editable, seeded with defaults) ──────────────
+export const DEFAULT_EXPENSE_CATS = [
   "Meals (Staff)",
   "Transport",
   "Raw Materials",
@@ -32,7 +31,8 @@ export const EXPENSE_CATS = [
   "Other",
 ] as const;
 
-export type ExpenseCat = (typeof EXPENSE_CATS)[number];
+// Mutable list — managed via localStorage (see lib/categories.ts)
+export type ExpenseCat = string;
 
 // ─── MEAL SESSIONS ──────────────────────────────────────────────────────────
 export const MEAL_SESSIONS = ["Breakfast", "Lunch", "Dinner"] as const;

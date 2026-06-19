@@ -6,12 +6,31 @@ import Transaction, { type TransactionDoc } from "@/lib/models/Transaction";
 export const dynamic = "force-dynamic";
 
 
+// Legacy department ids (pre-Product rework) mapped to their closest
+// current product id. "spawn" had no direct successor in the new 5-product
+// lineup, so it folds into "fresh" (Fresh Mushrooms).
+const LEGACY_DEPT_TO_PRODUCT: Record<string, string> = {
+  tubes: "tubes",
+  training: "trainings",
+  spawn: "fresh",
+  fresh: "fresh",
+  cotton: "cotton",
+  kitchen: "kitchen",
+};
+
 function normalize(doc: TransactionDoc) {
   const { _id, createdAt, updatedAt, ...rest } = doc as TransactionDoc & {
     __v?: number;
+    dept?: string;
   };
   // Strip any Mongoose internals (e.g. __v) that may be present via .lean()
   delete (rest as Record<string, unknown>).__v;
+  // Migrate legacy `dept` documents (recorded before the Product rework) so
+  // they still appear in product-based charts and totals.
+  if (!rest.product && rest.dept) {
+    rest.product = LEGACY_DEPT_TO_PRODUCT[rest.dept] ?? undefined;
+  }
+  delete (rest as { dept?: string }).dept;
   return { id: _id, ...rest };
 }
 
@@ -31,14 +50,14 @@ export async function GET() {
 }
 
 // POST /api/transactions — create a new transaction
-// Body: { id, kind, date, amount, note?, dept?, site?, category?, mealSite?, mealSession? }
+// Body: { id, kind, date, amount, note?, product?, site?, category?, mealSite?, mealSession? }
 // `id` is the client-generated id (also used as the Mongo _id) so the
 // reducer's optimistic local state and the database stay in sync.
 export async function POST(req: Request) {
   try {
     await connectDB();
     const body = await req.json();
-    const { id, kind, date, amount, note, dept, site, category, mealSite, mealSession } = body;
+    const { id, kind, date, amount, note, product, site, category, mealSite, mealSession } = body;
 
     if (!id || !kind || !date || amount === undefined || amount === null) {
       return NextResponse.json(
@@ -66,7 +85,7 @@ export async function POST(req: Request) {
       date,
       amount: num,
       note: note ?? "",
-      dept,
+      product,
       site,
       category,
       mealSite,

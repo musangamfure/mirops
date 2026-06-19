@@ -1,13 +1,15 @@
 "use client";
 
-import { useState, useMemo, type Dispatch } from "react";
-import { DEPARTMENTS, SITES } from "@/lib/constants";
-import type { AppState, AppAction, TxKind, DeptId, SiteId } from "@/lib/types";
+import { useState, useMemo, useEffect, type Dispatch } from "react";
+import { PRODUCTS, SITES } from "@/lib/constants";
+import { loadCategories } from "@/lib/categories";
+import type { AppState, AppAction, TxKind, ProductId, SiteId } from "@/lib/types";
 import { fmt, sumKind } from "@/lib/store";
 import { EntryRow } from "./Dashboard";
 
 type KindFilter = "all" | TxKind;
-type DeptFilter = "all" | DeptId;
+type ProductFilter = "all" | ProductId;
+type CategoryFilter = "all" | string;
 type SiteFilter = "all" | SiteId;
 
 const labelSt: React.CSSProperties = {
@@ -101,18 +103,25 @@ export function Ledger({
   isMobile: boolean;
   onFlash: (msg: string, type?: string) => void;
 }) {
-  const [filterDept, setFilterDept] = useState<DeptFilter>("all");
+  const [filterProduct, setFilterProduct] = useState<ProductFilter>("all");
+  const [filterCategory, setFilterCategory] = useState<CategoryFilter>("all");
   const [filterKind, setFilterKind] = useState<KindFilter>("all");
   const [filterSite, setFilterSite] = useState<SiteFilter>("all");
   const [filterDateFrom, setFilterDateFrom] = useState("");
   const [filterDateTo, setFilterDateTo] = useState("");
   const [search, setSearch] = useState("");
   const [filtersOpen, setFiltersOpen] = useState(!isMobile);
+  const [categories, setCategories] = useState<string[]>([]);
+
+  useEffect(() => {
+    setCategories(loadCategories());
+  }, []);
 
   const filteredTx = useMemo(() => {
     return state.transactions.filter((t) => {
       if (t.kind === "float_topup") return false;
-      if (filterDept !== "all" && t.dept !== filterDept) return false;
+      if (filterProduct !== "all" && t.product !== filterProduct) return false;
+      if (filterCategory !== "all" && t.category !== filterCategory) return false;
       if (filterKind !== "all" && t.kind !== filterKind) return false;
       if (filterSite !== "all") {
         const siteId = t.category === "Meals (Staff)" ? t.mealSite : t.site;
@@ -122,13 +131,13 @@ export function Ledger({
       if (filterDateTo && t.date > filterDateTo) return false;
       if (search.trim()) {
         const q = search.toLowerCase();
-        const dept = DEPARTMENTS.find((d) => d.id === t.dept);
-        const haystack = [dept?.label, t.note, t.category, t.date].join(" ").toLowerCase();
+        const product = PRODUCTS.find((p) => p.id === t.product);
+        const haystack = [product?.label, t.note, t.category, t.date].join(" ").toLowerCase();
         if (!haystack.includes(q)) return false;
       }
       return true;
     });
-  }, [state.transactions, filterDept, filterKind, filterSite, filterDateFrom, filterDateTo, search]);
+  }, [state.transactions, filterProduct, filterCategory, filterKind, filterSite, filterDateFrom, filterDateTo, search]);
 
   // Group by date, sorted most-recent first
   const grouped = useMemo(() => {
@@ -145,11 +154,12 @@ export function Ledger({
   const net = totalRev - totalExp;
 
   const hasFilters =
-    filterDept !== "all" || filterKind !== "all" || filterSite !== "all" ||
+    filterProduct !== "all" || filterCategory !== "all" || filterKind !== "all" || filterSite !== "all" ||
     filterDateFrom !== "" || filterDateTo !== "" || search.trim() !== "";
 
   const activeFilterCount = [
-    filterDept !== "all",
+    filterProduct !== "all",
+    filterCategory !== "all",
     filterKind !== "all",
     filterSite !== "all",
     filterDateFrom !== "",
@@ -158,7 +168,8 @@ export function Ledger({
   ].filter(Boolean).length;
 
   const clearFilters = () => {
-    setFilterDept("all");
+    setFilterProduct("all");
+    setFilterCategory("all");
     setFilterKind("all");
     setFilterSite("all");
     setFilterDateFrom("");
@@ -207,7 +218,7 @@ export function Ledger({
             <label style={labelSt}>Search</label>
             <input
               type="text"
-              placeholder="Department, note, category…"
+              placeholder="Product, category, note…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               style={{ ...inputSt, paddingLeft: 14 }}
@@ -217,8 +228,8 @@ export function Ledger({
           {/* Date range row */}
           <div style={{
             display: "grid",
-            gridTemplateColumns: isMobile ? "1fr 1fr" : "1fr 1fr 1fr 1fr auto",
-            gap: 12, alignItems: "flex-end",
+            gridTemplateColumns: isMobile ? "1fr 1fr" : "1fr 1fr 1fr",
+            gap: 12, alignItems: "flex-end", marginBottom: 12,
           }}>
             <div>
               <label style={labelSt}>From date</label>
@@ -241,15 +252,6 @@ export function Ledger({
               />
             </div>
             <div>
-              <label style={labelSt}>Department</label>
-              <select value={filterDept} onChange={(e) => setFilterDept(e.target.value as DeptFilter)} style={selectSt}>
-                <option value="all">All Departments</option>
-                {DEPARTMENTS.map((d) => (
-                  <option key={d.id} value={d.id}>{d.emoji} {d.label}</option>
-                ))}
-              </select>
-            </div>
-            <div>
               <label style={labelSt}>Type</label>
               <select value={filterKind} onChange={(e) => setFilterKind(e.target.value as KindFilter)} style={selectSt}>
                 <option value="all">All Types</option>
@@ -257,34 +259,47 @@ export function Ledger({
                 <option value="expense">💸 Expense</option>
               </select>
             </div>
-            {!isMobile && (
-              <div>
-                <label style={labelSt}>Site</label>
-                <select value={filterSite} onChange={(e) => setFilterSite(e.target.value as SiteFilter)} style={selectSt}>
-                  <option value="all">All Sites</option>
-                  {SITES.map((s) => (
-                    <option key={s.id} value={s.id}>{s.emoji} {s.label}</option>
-                  ))}
-                </select>
-              </div>
-            )}
           </div>
 
-          {/* Site (mobile) + Clear row */}
+          {/* Product / Category / Site row */}
           <div style={{
-            display: "flex", gap: 12, marginTop: 12, alignItems: "flex-end", flexWrap: "wrap",
+            display: "grid",
+            gridTemplateColumns: isMobile ? "1fr 1fr" : "1fr 1fr 1fr",
+            gap: 12, alignItems: "flex-end",
           }}>
-            {isMobile && (
-              <div style={{ flex: 1 }}>
-                <label style={labelSt}>Site</label>
-                <select value={filterSite} onChange={(e) => setFilterSite(e.target.value as SiteFilter)} style={selectSt}>
-                  <option value="all">All Sites</option>
-                  {SITES.map((s) => (
-                    <option key={s.id} value={s.id}>{s.emoji} {s.label}</option>
-                  ))}
-                </select>
-              </div>
-            )}
+            <div>
+              <label style={labelSt}>Product</label>
+              <select value={filterProduct} onChange={(e) => setFilterProduct(e.target.value as ProductFilter)} style={selectSt}>
+                <option value="all">All Products</option>
+                {PRODUCTS.map((p) => (
+                  <option key={p.id} value={p.id}>{p.emoji} {p.label}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label style={labelSt}>Category</label>
+              <select value={filterCategory} onChange={(e) => setFilterCategory(e.target.value as CategoryFilter)} style={selectSt}>
+                <option value="all">All Categories</option>
+                {categories.map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label style={labelSt}>Site</label>
+              <select value={filterSite} onChange={(e) => setFilterSite(e.target.value as SiteFilter)} style={selectSt}>
+                <option value="all">All Sites</option>
+                {SITES.map((s) => (
+                  <option key={s.id} value={s.id}>{s.emoji} {s.label}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Clear row */}
+          <div style={{
+            display: "flex", justifyContent: "flex-end", marginTop: 12,
+          }}>
             {hasFilters && (
               <button
                 onClick={clearFilters}
