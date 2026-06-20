@@ -249,11 +249,13 @@ export default function App() {
             <>
               {tab === "dashboard" && (
                 <Dashboard state={state} dispatch={dispatchAndSync}
-                  activeDate={state.activeDate} isMobile={true} onFlash={flash} />
+                  activeDate={state.activeDate} isMobile={true} onFlash={flash}
+                  onViewLedger={() => setTab("ledger")} />
               )}
               {tab === "add" && (
                 <EntryFormPanel dispatch={dispatchAndSync}
-                  activeDate={state.activeDate} onSaved={(m) => flash(m)} />
+                  activeDate={state.activeDate} onSaved={(m) => flash(m)}
+                  existingTx={state.transactions} />
               )}
               {tab === "ledger" && (
                 <Ledger state={state} dispatch={dispatchAndSync} isMobile={true} onFlash={flash} />
@@ -307,12 +309,14 @@ export default function App() {
           <>
             {tab === "dashboard" && (
               <Dashboard state={state} dispatch={dispatchAndSync}
-                activeDate={state.activeDate} isMobile={false} onFlash={flash} />
+                activeDate={state.activeDate} isMobile={false} onFlash={flash}
+                onViewLedger={() => setTab("ledger")} />
             )}
             {tab === "add" && (
               <div style={{ maxWidth: 660, margin: "0 auto" }}>
                 <EntryFormPanel dispatch={dispatchAndSync}
-                  activeDate={state.activeDate} onSaved={(m) => flash(m)} />
+                  activeDate={state.activeDate} onSaved={(m) => flash(m)}
+                  existingTx={state.transactions} />
               </div>
             )}
             {tab === "ledger" && (

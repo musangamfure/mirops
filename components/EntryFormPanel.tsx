@@ -6,7 +6,7 @@ import {
   PRODUCTS, SITES, MEAL_SESSIONS,
 } from "@/lib/constants";
 import { loadCategories, saveCategories } from "@/lib/categories";
-import type { AppAction, EntryForm } from "@/lib/types";
+import type { AppAction, EntryForm, Transaction } from "@/lib/types";
 
 const EMPTY_FORM: EntryForm = {
   kind: "revenue", product: "tubes", site: "mageragere",
@@ -21,17 +21,20 @@ const labelSt: React.CSSProperties = {
 };
 
 export function EntryFormPanel({
-  dispatch, activeDate, onSaved,
+  dispatch, activeDate, onSaved, existingTx,
 }: {
   dispatch: Dispatch<AppAction>;
   activeDate: string;
   onSaved: (msg: string) => void;
+  existingTx: Transaction[];
 }) {
   const [form, setForm] = useState<EntryForm>(EMPTY_FORM);
   const [error, setError] = useState("");
   const [categories, setCategories] = useState<string[]>([]);
   const [addingCat, setAddingCat] = useState(false);
   const [newCat, setNewCat] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [pendingDuplicate, setPendingDuplicate] = useState<Transaction | null>(null);
 
   useEffect(() => {
     setCategories(loadCategories());
@@ -63,7 +66,41 @@ export function EntryFormPanel({
     setNewCat("");
   }
 
+  /**
+   * Looks for a same-day transaction that matches this one closely enough
+   * to likely be an accidental re-entry: same kind, amount, site, and
+   * product/category, and either the same note or both blank. This is a
+   * judgment call, not a hard rule — legitimate repeats (e.g. two identical
+   * transport fees) do happen, so this only prompts for confirmation, it
+   * never blocks the save outright.
+   */
+  function findLikelyDuplicate(candidate: Transaction): Transaction | undefined {
+    return existingTx.find((t) => {
+      if (t.date !== activeDate) return false;
+      if (t.kind !== candidate.kind) return false;
+      if (t.amount !== candidate.amount) return false;
+      if (t.site !== candidate.site) return false;
+      if (candidate.kind === "revenue" && t.product !== candidate.product) return false;
+      if (candidate.kind === "expense" && t.category !== candidate.category) return false;
+      const sameNote = (t.note || "").trim() === (candidate.note || "").trim();
+      return sameNote;
+    });
+  }
+
+  function buildPayload() {
+    const amt = Number(form.amount);
+    return {
+      kind: form.kind, date: activeDate, amount: amt,
+      note: form.note.trim(),
+      site: form.site,
+      product: form.kind === "revenue" ? form.product : undefined,
+      category: isExpense ? form.category : undefined,
+      mealSession: isMeal ? form.mealSession : undefined,
+    };
+  }
+
   function submit() {
+    if (submitting) return; // guards against double-tap / double-click firing two saves
     const amt = Number(form.amount);
     if (!form.amount || isNaN(amt) || amt <= 0) {
       setError("Enter a valid amount greater than 0"); return;
@@ -75,20 +112,26 @@ export function EntryFormPanel({
       setError("Add a description for Other"); return;
     }
 
-    dispatch({
-      type: "ADD_TX",
-      payload: {
-        kind: form.kind, date: activeDate, amount: amt,
-        note: form.note.trim(),
-        site: form.site,
-        product: form.kind === "revenue" ? form.product : undefined,
-        category: isExpense ? form.category : undefined,
-        mealSession: isMeal ? form.mealSession : undefined,
-      },
-    });
+    const payload = buildPayload();
+    const duplicate = findLikelyDuplicate(payload as Transaction);
+    if (duplicate) {
+      setPendingDuplicate(duplicate);
+      return; // wait for explicit confirmation before saving
+    }
+
+    doSave(payload);
+  }
+
+  function doSave(payload: ReturnType<typeof buildPayload>) {
+    setSubmitting(true);
+    dispatch({ type: "ADD_TX", payload });
     setForm((f) => ({ ...f, amount: "", note: "", category: "" }));
     setError("");
+    setPendingDuplicate(null);
     onSaved("Entry saved ✓");
+    // Release the lock shortly after — long enough to block an accidental
+    // double-tap, short enough to never get in the way of the next entry.
+    setTimeout(() => setSubmitting(false), 600);
   }
 
   const selStyle: React.CSSProperties = {
@@ -112,6 +155,51 @@ export function EntryFormPanel({
 
   return (
     <div>
+      {pendingDuplicate && (
+        <div style={{
+          position: "fixed", inset: 0, background: "rgba(0,0,0,0.82)",
+          zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: 24,
+        }}
+          onClick={(e) => e.target === e.currentTarget && setPendingDuplicate(null)}
+        >
+          <div style={{
+            background: "#111e0f", border: "1px solid #78460a",
+            borderRadius: 16, maxWidth: 420, width: "100%",
+            padding: 28, boxShadow: "0 24px 60px rgba(0,0,0,0.5)",
+            textAlign: "center",
+          }}>
+            <div style={{ fontSize: 32, marginBottom: 12 }}>⚠️</div>
+            <div style={{ fontSize: 16, fontWeight: "bold", color: "#c8e6c9", marginBottom: 8 }}>
+              Possible Duplicate Entry
+            </div>
+            <div style={{ fontSize: 13, color: "#9ab89a", marginBottom: 20, lineHeight: 1.5 }}>
+              An entry with the same amount, {pendingDuplicate.kind === "revenue" ? "product" : "category"}, and site
+              already exists for {activeDate}
+              {pendingDuplicate.note ? ` — note: "${pendingDuplicate.note}"` : ""}.
+              Are you sure you want to save this one too?
+            </div>
+            <div style={{ display: "flex", gap: 10 }}>
+              <button
+                onClick={() => setPendingDuplicate(null)}
+                style={{
+                  flex: 1, padding: 12, borderRadius: 10,
+                  border: "1px solid #2d4a2d", background: "transparent",
+                  color: "#9ab89a", fontSize: 14, cursor: "pointer", fontFamily: "Georgia, serif",
+                }}
+              >Cancel</button>
+              <button
+                onClick={() => doSave(buildPayload())}
+                style={{
+                  flex: 1, padding: 12, borderRadius: 10, border: "none",
+                  background: "#b45309", color: "white", fontSize: 14,
+                  fontWeight: "bold", cursor: "pointer", fontFamily: "Georgia, serif",
+                }}
+              >Save Anyway</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div style={{ marginBottom: 20 }}>
         <h1 style={{ fontSize: 22, fontWeight: "bold", color: "#c8e6c9", margin: 0 }}>Record Entry</h1>
         <p style={{ color: "#6a9c6a", marginTop: 4, fontSize: 13 }}>
@@ -322,14 +410,15 @@ export function EntryFormPanel({
           </div>
         )}
 
-        <button type="button" onClick={submit} style={{
-          width: "100%", background: "#4a7c59", color: "#fff",
+        <button type="button" onClick={submit} disabled={submitting} style={{
+          width: "100%", background: submitting ? "#3a5c3a" : "#4a7c59", color: "#fff",
           border: "none", borderRadius: 12, padding: "14px",
-          fontWeight: "bold", fontSize: 16, cursor: "pointer",
+          fontWeight: "bold", fontSize: 16, cursor: submitting ? "default" : "pointer",
           fontFamily: "Georgia, serif", transition: "opacity 0.2s",
           boxShadow: "0 4px 16px rgba(74,124,89,0.3)",
+          opacity: submitting ? 0.7 : 1,
         }}>
-          Save Entry
+          {submitting ? "Saving…" : "Save Entry"}
         </button>
       </div>
     </div>

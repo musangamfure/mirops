@@ -86,9 +86,19 @@ function EditModal({
   onCancel: () => void;
   isMobile: boolean;
 }) {
+  const isTopup = tx.kind === "float_topup";
+  const [kind, setKind] = useState<"revenue" | "expense">(
+    tx.kind === "float_topup" ? "revenue" : tx.kind
+  );
+  const [product, setProductId] = useState<string>(tx.product ?? PRODUCTS[0].id);
+  const [category, setCategory] = useState(tx.category ?? "");
   const [amount, setAmount] = useState(String(tx.amount));
   const [note, setNote] = useState(tx.note ?? "");
   const [error, setError] = useState("");
+  const [categories] = useState<string[]>(() => loadCategories());
+
+  const isExpense = kind === "expense";
+  const site = SITES.find((s) => s.id === tx.site);
 
   const handleSave = () => {
     const n = Number(amount);
@@ -96,11 +106,18 @@ function EditModal({
       setError("Enter a valid amount greater than 0");
       return;
     }
-    onSave({ amount: n, note: note.trim() });
+    if (!isTopup && isExpense && !category) {
+      setError("Select an expense category");
+      return;
+    }
+    onSave({
+      kind: isTopup ? tx.kind : kind,
+      amount: n,
+      note: note.trim(),
+      product: isTopup ? tx.product : (isExpense ? undefined : (product as Transaction["product"])),
+      category: isTopup ? tx.category : (isExpense ? category : undefined),
+    });
   };
-
-  const product = PRODUCTS.find((p) => p.id === tx.product);
-  const site = SITES.find((s) => s.id === tx.site);
 
   const panelStyle = isMobile
     ? {
@@ -115,6 +132,28 @@ function EditModal({
         boxShadow: "0 24px 60px rgba(0,0,0,0.5)",
         animation: "scaleIn 0.2s var(--ease-out)",
       };
+
+  const labelSt: React.CSSProperties = {
+    display: "block", fontSize: 11, color: "#9ab89a", marginBottom: 6,
+    textTransform: "uppercase", letterSpacing: 0.8,
+  };
+
+  const selStyle: React.CSSProperties = {
+    width: "100%",
+    padding: "9px 12px",
+    background: "#162214",
+    border: "1px solid #2d4a2d",
+    borderRadius: 8,
+    color: "#c8e6c9",
+    fontSize: 13,
+    fontFamily: "Georgia, serif",
+    cursor: "pointer",
+    appearance: "none" as const,
+    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236a9c6a' d='M6 8L1 3h10z'/%3E%3C/svg%3E")`,
+    backgroundRepeat: "no-repeat",
+    backgroundPosition: "right 10px center",
+    paddingRight: 32,
+  };
 
   return (
     <div
@@ -137,10 +176,11 @@ function EditModal({
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
           <div>
             <div style={{ fontSize: 16, fontWeight: "bold", color: "#c8e6c9" }}>✏ Edit Entry</div>
-            <div style={{ fontSize: 12, color: "#6a9c6a", marginTop: 4 }}>
-              {product ? `${product.emoji} ${product.label}` : tx.category}
-              {site ? ` · ${site.emoji} ${site.label}` : ""}
-            </div>
+            {site && (
+              <div style={{ fontSize: 12, color: "#6a9c6a", marginTop: 4 }}>
+                {site.emoji} {site.label}
+              </div>
+            )}
           </div>
           <button onClick={onCancel} style={{
             width: 30, height: 30, borderRadius: "50%", border: "none",
@@ -149,32 +189,67 @@ function EditModal({
           }}>×</button>
         </div>
 
-        {/* Kind badge */}
-        <div style={{ marginBottom: 16 }}>
-          <span style={{
-            display: "inline-block", padding: "4px 12px", borderRadius: 20,
-            fontSize: 12, fontWeight: "bold",
-            background: tx.kind === "revenue" ? "#1b4332" : tx.kind === "float_topup" ? "#3b0764" : "#3a0a0a",
-            color: tx.kind === "revenue" ? "#4ade80" : tx.kind === "float_topup" ? "#c4b5fd" : "#f87171",
-            border: `1px solid ${tx.kind === "revenue" ? "#2d4a2d" : tx.kind === "float_topup" ? "#7c3aed" : "#7f1d1d"}`,
-          }}>
-            {tx.kind === "revenue" ? "Revenue" : tx.kind === "float_topup" ? "Float Top-up" : "Expense"}
-          </span>
-          {tx.category && (
+        {/* Type */}
+        {isTopup ? (
+          <div style={{ marginBottom: 16 }}>
             <span style={{
-              marginLeft: 6, display: "inline-block", padding: "4px 12px",
-              borderRadius: 20, fontSize: 12, background: "#1e3320", color: "#9ab89a",
-              border: "1px solid #2d4a2d",
-            }}>{tx.category}</span>
-          )}
-        </div>
+              display: "inline-block", padding: "4px 12px", borderRadius: 20,
+              fontSize: 12, fontWeight: "bold",
+              background: "#3b0764", color: "#c4b5fd", border: "1px solid #7c3aed",
+            }}>
+              💜 Float Top-up
+            </span>
+          </div>
+        ) : (
+          <div style={{ marginBottom: 16 }}>
+            <label style={labelSt}>Type</label>
+            <select
+              value={kind}
+              onChange={(e) => { setKind(e.target.value as "revenue" | "expense"); setError(""); }}
+              style={{
+                ...selStyle,
+                color: kind === "revenue" ? "#4ade80" : "#f87171",
+                borderColor: kind === "revenue" ? "#2d6a4f" : "#7f1d1d",
+                background: kind === "revenue" ? "#0f1a0f" : "#1a0a0a",
+              }}
+            >
+              <option value="revenue">💹 Revenue</option>
+              <option value="expense">💸 Expense</option>
+            </select>
+          </div>
+        )}
+
+        {/* Product (revenue) or Category (expense) */}
+        {!isTopup && (isExpense ? (
+          <div style={{ marginBottom: 16 }}>
+            <label style={labelSt}>Category</label>
+            <select
+              value={category}
+              onChange={(e) => { setCategory(e.target.value); setError(""); }}
+              style={selStyle}
+            >
+              <option value="">Select category…</option>
+              {categories.map((c) => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </div>
+        ) : (
+          <div style={{ marginBottom: 16 }}>
+            <label style={labelSt}>Product</label>
+            <select
+              value={product}
+              onChange={(e) => setProductId(e.target.value)}
+              style={selStyle}
+            >
+              {PRODUCTS.map((p) => (
+                <option key={p.id} value={p.id}>{p.emoji} {p.label}</option>
+              ))}
+            </select>
+          </div>
+        ))}
 
         {/* Amount field */}
         <div style={{ marginBottom: 16 }}>
-          <label style={{
-            display: "block", fontSize: 11, color: "#9ab89a", marginBottom: 6,
-            textTransform: "uppercase", letterSpacing: 0.8,
-          }}>Amount (RWF)</label>
+          <label style={labelSt}>Amount (RWF)</label>
           <input
             type="number" value={amount} min="1"
             onChange={(e) => { setAmount(e.target.value); setError(""); }}
@@ -185,10 +260,7 @@ function EditModal({
 
         {/* Note field */}
         <div style={{ marginBottom: 24 }}>
-          <label style={{
-            display: "block", fontSize: 11, color: "#9ab89a", marginBottom: 6,
-            textTransform: "uppercase", letterSpacing: 0.8,
-          }}>Note</label>
+          <label style={labelSt}>Note</label>
           <input
             type="text" value={note} placeholder="Optional description"
             onChange={(e) => setNote(e.target.value)}
@@ -336,15 +408,21 @@ export function EntryRow({
   const label = `${primaryLabel ?? "Float Top-up"} · ${fmt(t.amount)}${t.note ? ` · ${t.note}` : ""}`;
 
   function handleEdit(updated: Partial<Transaction>) {
-    // Delete old, add updated (preserves date/kind/product/category/site)
+    // Delete old, add updated. Spread updated last so explicit `undefined`
+    // values (e.g. clearing `product` when switching to an expense) take
+    // effect instead of being skipped by the spread.
     dispatch({ type: "DEL_TX", id: t.id });
     dispatch({
       type: "ADD_TX",
       id: t.id,
       payload: {
         ...t,
+        kind: updated.kind ?? t.kind,
         amount: updated.amount ?? t.amount,
         note: updated.note ?? t.note,
+        product: updated.product,
+        category: updated.category,
+        mealSession: updated.category === "Meals (Staff)" ? t.mealSession : undefined,
       },
     });
     setEditing(false);
@@ -503,13 +581,14 @@ function KpiCard({
 
 // ── Dashboard ──────────────────────────────────────────────────
 export function Dashboard({
-  state, dispatch, activeDate, isMobile, onFlash,
+  state, dispatch, activeDate, isMobile, onFlash, onViewLedger,
 }: {
   state: AppState;
   dispatch: Dispatch<AppAction>;
   activeDate: string;
   isMobile: boolean;
   onFlash: (msg: string, type?: string) => void;
+  onViewLedger?: () => void;
 }) {
   const dayTx = state.transactions.filter((t) => t.date === activeDate);
   const dayRev = sumKind(dayTx, "revenue");
@@ -534,8 +613,11 @@ export function Dashboard({
   const revenueEntries = dayTx.filter((t) => t.kind === "revenue").length;
   const expenseEntries = dayTx.filter((t) => t.kind === "expense").length;
 
-  const recentTx = dayTx.filter((t) => t.kind !== "float_topup").slice(0, 12);
+  const dayNonTopupTx = dayTx.filter((t) => t.kind !== "float_topup");
   const topupTx = dayTx.filter((t) => t.kind === "float_topup");
+  const VISIBLE_CAP = 6;
+  const recentTx = dayNonTopupTx.slice(0, VISIBLE_CAP);
+  const hasMoreEntries = dayNonTopupTx.length > VISIBLE_CAP;
 
   const kpisDesktop = [
     { label: "Revenue",  value: fmt(dayRev), icon: "💹", accent: "#2d6a4f" },
@@ -763,7 +845,7 @@ export function Dashboard({
             Recent Entries — {activeDate}
           </h2>
           <div style={{ fontSize: 12, color: "#6a9c6a" }}>
-            {recentTx.length + topupTx.length} records
+            {dayNonTopupTx.length + topupTx.length} records
           </div>
         </div>
 
@@ -785,6 +867,21 @@ export function Dashboard({
                 onFlash={onFlash} isMobile={isMobile}
               />
             ))}
+            {hasMoreEntries && (
+              <button
+                type="button"
+                onClick={onViewLedger}
+                style={{
+                  width: "100%", marginTop: 12, padding: "10px",
+                  background: "transparent", border: "1px solid #2d4a2d",
+                  borderRadius: 10, color: "#4ade80", fontSize: 13,
+                  fontWeight: 700, cursor: onViewLedger ? "pointer" : "default",
+                  fontFamily: "Georgia, serif",
+                }}
+              >
+                View all {dayNonTopupTx.length} entries in Ledger →
+              </button>
+            )}
           </>
         )}
       </div>
