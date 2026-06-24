@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type Dispatch } from "react";
-import { PRODUCTS, SITES } from "@/lib/constants";
+import { PRODUCTS, SITES, SITE_OPTIONS } from "@/lib/constants";
 import { loadCategories } from "@/lib/categories";
 import type { AppState, AppAction, Transaction } from "@/lib/types";
 import {
@@ -98,7 +98,7 @@ function EditModal({
   const [categories] = useState<string[]>(() => loadCategories());
 
   const isExpense = kind === "expense";
-  const site = SITES.find((s) => s.id === tx.site);
+  const site = SITE_OPTIONS.find((s) => s.id === tx.site);
 
   const handleSave = () => {
     const n = Number(amount);
@@ -396,7 +396,7 @@ export function EntryRow({
   const [editing, setEditing] = useState(false);
 
   const product = PRODUCTS.find((p) => p.id === t.product);
-  const site = SITES.find((s) => s.id === t.site);
+  const site = SITE_OPTIONS.find((s) => s.id === t.site);
 
   const amountColor = t.kind === "revenue" ? "#4ade80"
     : t.kind === "float_topup" ? "#c4b5fd" : "#f87171";

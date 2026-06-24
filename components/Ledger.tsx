@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect, type Dispatch } from "react";
-import { PRODUCTS, SITES } from "@/lib/constants";
+import { PRODUCTS, SITES, SITE_OPTIONS, BOTH_SITES_ID } from "@/lib/constants";
 import { loadCategories } from "@/lib/categories";
 import type { AppState, AppAction, TxKind, ProductId, SiteId } from "@/lib/types";
 import { fmt, sumKind } from "@/lib/store";
@@ -123,7 +123,11 @@ export function Ledger({
       if (filterProduct !== "all" && t.product !== filterProduct) return false;
       if (filterCategory !== "all" && t.category !== filterCategory) return false;
       if (filterKind !== "all" && t.kind !== filterKind) return false;
-      if (filterSite !== "all" && t.site !== filterSite) return false;
+      if (
+        filterSite !== "all" &&
+        t.site !== filterSite &&
+        !(filterSite !== BOTH_SITES_ID && t.site === BOTH_SITES_ID)
+      ) return false;
       if (filterDateFrom && t.date < filterDateFrom) return false;
       if (filterDateTo && t.date > filterDateTo) return false;
       if (search.trim()) {
@@ -286,7 +290,7 @@ export function Ledger({
               <label style={labelSt}>Site</label>
               <select value={filterSite} onChange={(e) => setFilterSite(e.target.value as SiteFilter)} style={selectSt}>
                 <option value="all">All Sites</option>
-                {SITES.map((s) => (
+                {SITE_OPTIONS.map((s) => (
                   <option key={s.id} value={s.id}>{s.emoji} {s.label}</option>
                 ))}
               </select>

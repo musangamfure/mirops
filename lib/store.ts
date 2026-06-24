@@ -1,6 +1,6 @@
 import type { AppState, AppAction, Transaction } from "./types";
 import type { ProductId } from "./constants";
-import { PRODUCTS, LOW_FLOAT_THRESHOLD } from "./constants";
+import { PRODUCTS, SITES, LOW_FLOAT_THRESHOLD, BOTH_SITES_ID } from "./constants";
 
 // ─── DATE HELPERS ─────────────────────────────────────────────────────────────
 /**
@@ -235,19 +235,31 @@ export function bySite(
   txs.forEach((t) => {
     if (t.kind !== "revenue" && t.kind !== "expense") return;
     if (!t.site) return;
-    if (!out[t.site]) out[t.site] = { revenue: 0, expense: 0 };
-    out[t.site][t.kind] += t.amount;
+    const kind = t.kind; // narrow once; nested closures below don't retain the check above
+    // A "Both Sites" entry (e.g. one bulk monthly food buy covering every
+    // session at both locations) isn't its own bucket — it counts toward
+    // each real site's total, so per-site summaries reflect the full spend.
+    const targetSites = t.site === BOTH_SITES_ID ? siteIds : [t.site];
+    targetSites.forEach((siteId) => {
+      if (!out[siteId]) out[siteId] = { revenue: 0, expense: 0 };
+      out[siteId][kind] += t.amount;
+    });
   });
   return out;
 }
 
 export function mealsBySiteToday(txs: Transaction[]): Record<string, number> {
   const out: Record<string, number> = {};
+  const realSiteIds: string[] = SITES.map((s) => s.id);
   txs
     .filter((t) => t.kind === "expense" && t.category === "Meals (Staff)")
     .forEach((t) => {
-      const key = t.site ?? "unknown";
-      out[key] = (out[key] ?? 0) + t.amount;
+      // A "Both Sites" meal expense is split across both real sites in this
+      // summary rather than living under its own "both" key.
+      const keys = t.site === BOTH_SITES_ID ? realSiteIds : [t.site ?? "unknown"];
+      keys.forEach((key) => {
+        out[key] = (out[key] ?? 0) + t.amount;
+      });
     });
   return out;
 }

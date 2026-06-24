@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 import type { Dispatch } from "react";
 import {
-  PRODUCTS, SITES, MEAL_SESSIONS,
+  PRODUCTS, SITES, SITE_OPTIONS, MEAL_SESSIONS, MEAL_SESSION_OPTIONS,
+  BOTH_SITES_ID, ALL_SESSIONS_ID,
 } from "@/lib/constants";
 import { loadCategories, saveCategories } from "@/lib/categories";
 import type { AppAction, EntryForm, Transaction } from "@/lib/types";
@@ -272,7 +273,15 @@ export function EntryFormPanel({
                 <div style={{ display: "flex", gap: 8 }}>
                   <select
                     value={form.category}
-                    onChange={(e) => setF("category", e.target.value as EntryForm["category"])}
+                    onChange={(e) => {
+                      const newCat = e.target.value as EntryForm["category"];
+                      setF("category", newCat);
+                      // "Both Sites" only makes sense for Meals (Staff) bulk
+                      // buys — fall back to a real site for any other category.
+                      if (newCat !== "Meals (Staff)" && form.site === BOTH_SITES_ID) {
+                        setF("site", "mageragere");
+                      }
+                    }}
                     style={{ ...selStyle, flex: 1 }}
                   >
                     <option value="">Select category…</option>
@@ -329,13 +338,28 @@ export function EntryFormPanel({
               <label style={labelSt}>Site</label>
               <select
                 value={form.site}
-                onChange={(e) => setF("site", e.target.value as EntryForm["site"])}
+                onChange={(e) => {
+                  const newSite = e.target.value as EntryForm["site"];
+                  setF("site", newSite);
+                  // Bulk buys ("Both Sites") default to covering every
+                  // sitting; leaving "Both Sites" drops back to a real one.
+                  if (newSite === BOTH_SITES_ID) {
+                    setF("mealSession", ALL_SESSIONS_ID);
+                  } else if (form.mealSession === ALL_SESSIONS_ID) {
+                    setF("mealSession", "Lunch");
+                  }
+                }}
                 style={selStyle}
               >
-                {SITES.map((s) => (
+                {(isMeal ? SITE_OPTIONS : SITES).map((s) => (
                   <option key={s.id} value={s.id}>{s.emoji} {s.label}</option>
                 ))}
               </select>
+              {isMeal && form.site === BOTH_SITES_ID && (
+                <div style={{ fontSize: 11, color: "#b45309", marginTop: 5 }}>
+                  Counts toward both sites&apos; meal totals — use for bulk monthly buys covering every session.
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -352,12 +376,17 @@ export function EntryFormPanel({
               onChange={(e) => setF("mealSession", e.target.value as EntryForm["mealSession"])}
               style={{ ...selStyle, borderColor: "#78460a", background: "#1a0e00", color: "#f59e0b" }}
             >
-              {MEAL_SESSIONS.map((sess) => (
+              {(form.site === BOTH_SITES_ID ? MEAL_SESSION_OPTIONS : MEAL_SESSIONS).map((sess) => (
                 <option key={sess} value={sess}>
-                  {sess === "Breakfast" ? "🌅" : sess === "Lunch" ? "☀️" : "🌙"} {sess}
+                  {sess === "Breakfast" ? "🌅" : sess === "Lunch" ? "☀️" : sess === "Dinner" ? "🌙" : "📦"} {sess}
                 </option>
               ))}
             </select>
+            {form.site === BOTH_SITES_ID && form.mealSession === ALL_SESSIONS_ID && (
+              <div style={{ fontSize: 11, color: "#b45309", marginTop: 5 }}>
+                One bulk buy covering breakfast, lunch, and dinner for the whole month.
+              </div>
+            )}
           </div>
         )}
 
