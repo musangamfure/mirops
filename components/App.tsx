@@ -13,6 +13,7 @@ import { Dashboard } from "./Dashboard";
 import { EntryFormPanel } from "./EntryFormPanel";
 import { Ledger } from "./Ledger";
 import { StaffOps } from "./StaffOps";
+import { InventoryManager } from "./InventoryManager";
 
 // ── useIsMobile ────────────────────────────────────────────────
 function useIsMobile() {
@@ -72,13 +73,14 @@ function Toast({ msg, type }: { msg: string; type: string }) {
   );
 }
 
-type Tab = "dashboard" | "add" | "ledger" | "staff";
+type Tab = "dashboard" | "add" | "ledger" | "staff" | "inventory";
 
 const TABS: { id: Tab; label: string; icon: string; short: string }[] = [
-  { id: "dashboard", label: "Dashboard",    icon: "📊", short: "Home" },
-  { id: "add",       label: "Record Entry", icon: "➕", short: "Add" },
-  { id: "ledger",    label: "Ledger",       icon: "📋", short: "Ledger" },
-  { id: "staff",     label: "Staff & Ops",  icon: "👥", short: "Staff" },
+  { id: "dashboard",  label: "Dashboard",    icon: "📊", short: "Home" },
+  { id: "add",        label: "Record Entry", icon: "➕", short: "Add" },
+  { id: "ledger",     label: "Ledger",       icon: "📋", short: "Ledger" },
+  { id: "inventory",  label: "Inventory",    icon: "📦", short: "Stock" },
+  { id: "staff",      label: "Staff & Ops",  icon: "👥", short: "Staff" },
 ];
 
 const STORAGE_KEY = "miru_ops_v5";
@@ -260,6 +262,7 @@ export default function App() {
               {tab === "ledger" && (
                 <Ledger state={state} dispatch={dispatchAndSync} isMobile={true} onFlash={flash} />
               )}
+              {tab === "inventory" && <InventoryManager isMobile={true} onFlash={flash} />}
               {tab === "staff" && <StaffOps state={state} isMobile={true} />}
             </>
           )}
@@ -322,6 +325,7 @@ export default function App() {
             {tab === "ledger" && (
               <Ledger state={state} dispatch={dispatchAndSync} isMobile={false} onFlash={flash} />
             )}
+            {tab === "inventory" && <InventoryManager isMobile={false} onFlash={flash} />}
             {tab === "staff" && <StaffOps state={state} isMobile={false} />}
           </>
         )}

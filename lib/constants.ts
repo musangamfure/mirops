@@ -15,25 +15,7 @@ export const SITES = [
   { id: "nyakabanda", label: "Nyakabanda",  emoji: "🏠" },
 ] as const;
 
-export type RealSiteId = (typeof SITES)[number]["id"];
-
-/**
- * "Both Sites" is a special, non-physical selection — used when a single
- * purchase covers both locations at once (e.g. buying a month's worth of
- * staff food in bulk, for every meal session, in one trip). It's kept out
- * of `SITES` so the per-site breakdown tables (which iterate `SITES`) keep
- * showing only the two real locations; aggregation helpers in `lib/store.ts`
- * fold any "both"-tagged transaction into each real site's totals instead.
- */
-export const BOTH_SITES_ID = "both" as const;
-export const BOTH_SITES_OPTION = { id: BOTH_SITES_ID, label: "Both Sites", emoji: "🏭🏠" } as const;
-
-// Full picker list — real sites plus the "Both Sites" choice — for any
-// dropdown/toggle that should let the user select it (currently: the
-// Meals (Staff) expense category).
-export const SITE_OPTIONS = [...SITES, BOTH_SITES_OPTION] as const;
-
-export type SiteId = RealSiteId | typeof BOTH_SITES_ID;
+export type SiteId = (typeof SITES)[number]["id"];
 
 // ─── EXPENSE CATEGORIES (user-editable, seeded with defaults) ──────────────
 export const DEFAULT_EXPENSE_CATS = [
@@ -54,21 +36,31 @@ export type ExpenseCat = string;
 
 // ─── MEAL SESSIONS ──────────────────────────────────────────────────────────
 export const MEAL_SESSIONS = ["Breakfast", "Lunch", "Dinner"] as const;
-export type RealMealSession = (typeof MEAL_SESSIONS)[number];
+export type MealSession = (typeof MEAL_SESSIONS)[number];
 
-/**
- * "All Sessions" pairs with "Both Sites" (see BOTH_SITES_ID above) for a
- * single bulk monthly food purchase that covers breakfast, lunch, and
- * dinner at once, rather than one sitting. Kept out of MEAL_SESSIONS so
- * any per-session breakdown that iterates that list stays limited to the
- * three real sittings; only the picker needs to offer it.
- */
-export const ALL_SESSIONS_ID = "All Sessions" as const;
-export const MEAL_SESSION_OPTIONS = [...MEAL_SESSIONS, ALL_SESSIONS_ID] as const;
+// ─── RAW MATERIALS (mushroom tube production inventory) ────────────────────
+// Per-tube consumption ratios for the four formula-linked materials are
+// derived from the 1-ton base bulk recipe (per the production formula):
+//   Cottonseed Hulls: 1,000 kg  →  0.1600 kg / tube
+//   Rice Bran:          250 kg  →  0.0400 kg / tube
+//   Rice Husks:         250 kg  →  0.0400 kg / tube
+//   Lime (CaCO3):         50 kg  →  0.0080 kg / tube
+// (Batch yields 6,250 kg wet substrate = 6,250 x 1kg tubes.)
+// Corn cobs, spawn, alcohol, and hygiene cotton are not part of the fixed
+// substrate formula, so they have no `kgPerTube` ratio — their stock is
+// managed via manual Stock In / Stock Out movements only.
+export const RAW_MATERIALS = [
+  { id: "cotton_hulls", label: "Cottonseed Hulls", emoji: "🌾", unit: "kg", kgPerTube: 0.16 },
+  { id: "rice_bran",    label: "Rice Bran",         emoji: "🌿", unit: "kg", kgPerTube: 0.04 },
+  { id: "rice_husks",   label: "Rice Husks",        emoji: "🌱", unit: "kg", kgPerTube: 0.04 },
+  { id: "lime",         label: "Lime",              emoji: "🧪", unit: "kg", kgPerTube: 0.008 },
+  { id: "corn_cobs",    label: "Corn Cobs",         emoji: "🌽", unit: "kg", kgPerTube: null },
+  { id: "spawn",        label: "Mushroom Spawn",    emoji: "🍄", unit: "kg", kgPerTube: null },
+  { id: "alcohol",      label: "Alcohol",           emoji: "🧴", unit: "L",  kgPerTube: null },
+  { id: "hygiene_cotton", label: "Hygiene Cotton",  emoji: "🩹", unit: "kg", kgPerTube: null },
+] as const;
 
-export type MealSession = RealMealSession | typeof ALL_SESSIONS_ID;
-
-// ─── EMPLOYEES ──────────────────────────────────────────────────────────────
+export type RawMaterialId = (typeof RAW_MATERIALS)[number]["id"];
 export const DEFAULT_EMPLOYEES = [
   "Emmanuel",
   "Claudine",
