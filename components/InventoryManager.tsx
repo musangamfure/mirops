@@ -726,11 +726,15 @@ function BatchModal({
             {/* Raw material cost (auto) + transport (manual, per material) */}
             {materialLines.map(({ item, line, materialCost }) => (
               <div key={line.itemId} style={{ marginBottom: 10 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "#c8e6c9", marginBottom: 4 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", fontSize: 13, color: "#c8e6c9", marginBottom: 4 }}>
                   <span>{item?.label}</span>
-                  <span style={{ color: "#6a9c6a" }}>
-                    {line.quantity} {item?.unit} × {(item?.costPerUnit ?? 0).toLocaleString()} = <b style={{ color: "#c8e6c9" }}>{materialCost.toLocaleString()}</b>
+                  <span style={{ fontSize: 11, color: "#6a9c6a" }}>
+                    {fmtMoney(item?.costPerUnit ?? 0)}/{item?.unit}
                   </span>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "#6a9c6a", marginBottom: 4 }}>
+                  <span>{line.quantity} {item?.unit} used</span>
+                  <span>= <b style={{ color: "#c8e6c9" }}>{fmtMoney(materialCost)}</b></span>
                 </div>
                 <input
                   type="number" min="0" placeholder={`Transport cost for ${item?.label ?? "this material"}`}
@@ -818,14 +822,15 @@ function BatchModal({
 }
 
 // ── Reorder Threshold Modal ───────────────────────────────────────
-function ThresholdModal({
+function MaterialSettingsModal({
   item, onSave, onCancel,
 }: {
   item: InventoryItem;
-  onSave: (reorderThreshold: number) => void;
+  onSave: (patch: { reorderThreshold: number; costPerUnit: number }) => void;
   onCancel: () => void;
 }) {
-  const [value, setValue] = useState(String(item.reorderThreshold));
+  const [threshold, setThreshold] = useState(String(item.reorderThreshold));
+  const [costPerUnit, setCostPerUnit] = useState(String(item.costPerUnit ?? 0));
 
   return (
     <div style={{
@@ -840,28 +845,44 @@ function ThresholdModal({
         padding: 28, boxShadow: "0 24px 60px rgba(0,0,0,0.5)",
       }}>
         <div style={{ fontSize: 16, fontWeight: "bold", color: "#c8e6c9", marginBottom: 6 }}>
-          ⚠️ Low-Stock Alert
+          ⚙ {item.label} Settings
         </div>
         <div style={{ fontSize: 12, color: "#6a9c6a", marginBottom: 20 }}>
-          Get warned when {item.label} drops to or below this level.
+          Update the low-stock alert and the cost used in batch cost breakdowns.
         </div>
-        <label style={labelSt}>Reorder Threshold ({item.unit})</label>
-        <input
-          type="number" min="0" value={value}
-          onChange={(e) => setValue(e.target.value)}
-          style={{ marginBottom: 20 }}
-        />
+
+        <div style={{ marginBottom: 16 }}>
+          <label style={labelSt}>Cost per {item.unit} (RWF)</label>
+          <input
+            type="number" min="0" value={costPerUnit}
+            onChange={(e) => setCostPerUnit(e.target.value)}
+          />
+          <div style={{ fontSize: 11, color: "#6a9c6a", marginTop: 4 }}>
+            Used to auto-calculate raw material cost on future batches. Past batches keep the cost they were logged with.
+          </div>
+        </div>
+
+        <div style={{ marginBottom: 20 }}>
+          <label style={labelSt}>Reorder Threshold ({item.unit})</label>
+          <input
+            type="number" min="0" value={threshold}
+            onChange={(e) => setThreshold(e.target.value)}
+          />
+        </div>
+
         <div style={{ display: "flex", gap: 10 }}>
           <button onClick={onCancel} style={{
             flex: 1, padding: 12, borderRadius: 10,
             border: "1px solid #2d4a2d", background: "transparent",
             color: "#9ab89a", fontSize: 14, cursor: "pointer", fontFamily: "Georgia, serif",
           }}>Cancel</button>
-          <button onClick={() => onSave(Number(value) || 0)} style={{
-            flex: 2, padding: 12, borderRadius: 10, border: "none",
-            background: "#4a7c59", color: "white", fontSize: 14,
-            fontWeight: "bold", cursor: "pointer", fontFamily: "Georgia, serif",
-          }}>Save</button>
+          <button
+            onClick={() => onSave({ reorderThreshold: Number(threshold) || 0, costPerUnit: Number(costPerUnit) || 0 })}
+            style={{
+              flex: 2, padding: 12, borderRadius: 10, border: "none",
+              background: "#4a7c59", color: "white", fontSize: 14,
+              fontWeight: "bold", cursor: "pointer", fontFamily: "Georgia, serif",
+            }}>Save</button>
         </div>
       </div>
     </div>
@@ -899,10 +920,13 @@ function MaterialCard({
               {material.kgPerTube} {item.unit}/tube
             </div>
           )}
+          <div style={{ fontSize: 10, color: "#6a9c6a", marginTop: 2 }}>
+            {fmtMoney(item.costPerUnit)}/{item.unit}
+          </div>
         </div>
         <button
           onClick={onSetThreshold}
-          title="Set low-stock alert threshold"
+          title="Edit cost per unit & low-stock alert"
           style={{
             width: 26, height: 26, borderRadius: 7, border: "1px solid #2d4a2d",
             background: "#162214", color: "#9ab89a", fontSize: 12, cursor: "pointer",
@@ -1032,15 +1056,15 @@ export function InventoryManager({ isMobile, onFlash }: {
     }
   }
 
-  async function handleThresholdSave(reorderThreshold: number) {
+  async function handleMaterialSettingsSave(patch: { reorderThreshold: number; costPerUnit: number }) {
     if (!thresholdTarget) return;
     try {
-      await apiUpdateInventoryItem(thresholdTarget.id, { reorderThreshold });
+      await apiUpdateInventoryItem(thresholdTarget.id, patch);
       setThresholdTarget(null);
-      onFlash("Alert threshold updated ✓");
+      onFlash("Material settings updated ✓");
       loadAll();
     } catch (err) {
-      onFlash(err instanceof Error ? err.message : "Could not update threshold", "error");
+      onFlash(err instanceof Error ? err.message : "Could not update material", "error");
     }
   }
 
@@ -1139,7 +1163,7 @@ export function InventoryManager({ isMobile, onFlash }: {
         <MovementModal item={movementTarget} onSave={handleStockMove} onCancel={() => setMovementTarget(null)} />
       )}
       {thresholdTarget && (
-        <ThresholdModal item={thresholdTarget} onSave={handleThresholdSave} onCancel={() => setThresholdTarget(null)} />
+        <MaterialSettingsModal item={thresholdTarget} onSave={handleMaterialSettingsSave} onCancel={() => setThresholdTarget(null)} />
       )}
       {batchModalOpen && (
         <BatchModal
@@ -1353,7 +1377,7 @@ export function InventoryManager({ isMobile, onFlash }: {
                     </div>
                     {b.mix && b.mix.length > 0 && (
                       <div style={{ fontSize: 11, color: "#6a9c6a", marginTop: 3 }}>
-                        {b.mix.map((m) => `${m.label} ${m.quantity}${m.unit}`).join(" · ")}
+                        {b.mix.map((m) => `${m.label} ${m.quantity}${m.unit} @ ${fmtMoney(m.costPerUnit)}/${m.unit}`).join(" · ")}
                       </div>
                     )}
                   </div>
