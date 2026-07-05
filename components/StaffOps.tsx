@@ -1,25 +1,15 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { PRODUCTS, SITES, DEFAULT_EMPLOYEES } from "@/lib/constants";
+import { PRODUCTS, SITES } from "@/lib/constants";
 import { loadCategories, saveCategories } from "@/lib/categories";
 import type { AppState } from "@/lib/types";
-import { fmt, bySite } from "@/lib/store";
-
-const EMPLOYEES_KEY = "miru_employees_v1";
-
-function loadEmployees(): string[] {
-  if (typeof window === "undefined") return [...DEFAULT_EMPLOYEES];
-  try {
-    const stored = localStorage.getItem(EMPLOYEES_KEY);
-    if (stored) return JSON.parse(stored) as string[];
-  } catch {}
-  return [...DEFAULT_EMPLOYEES];
-}
-
-function saveEmployees(list: string[]) {
-  try { localStorage.setItem(EMPLOYEES_KEY, JSON.stringify(list)); } catch {}
-}
+import { fmt, bySite, byMonth } from "@/lib/store";
+import type { Employee } from "@/lib/payroll";
+import { formatMonthLabel } from "@/lib/payroll";
+import {
+  apiGetEmployees, apiCreateEmployee, apiUpdateEmployee, apiDeleteEmployee,
+} from "@/lib/payrollApi";
 
 function Badge({ color, children }: { color: string; children: React.ReactNode }) {
   return (
@@ -111,6 +101,128 @@ function NameModal({
             background: "#4a7c59", color: "white", fontSize: 14,
             fontWeight: "bold", cursor: "pointer", fontFamily: "Georgia, serif",
           }}>{initial ? "Save Changes" : submitLabel}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Employee Modal (name + payroll details) ─────────────────────
+function EmployeeModal({
+  title, initial, onSave, onCancel,
+}: {
+  title: string;
+  initial?: Employee;
+  onSave: (data: {
+    name: string; monthlySalary: number; phone?: string; rssbNumber?: string; idNumber?: string;
+  }) => void;
+  onCancel: () => void;
+}) {
+  const [name, setName] = useState(initial?.name ?? "");
+  const [monthlySalary, setMonthlySalary] = useState(String(initial?.monthlySalary ?? ""));
+  const [phone, setPhone] = useState(initial?.phone ?? "");
+  const [rssbNumber, setRssbNumber] = useState(initial?.rssbNumber ?? "");
+  const [idNumber, setIdNumber] = useState(initial?.idNumber ?? "");
+  const [error, setError] = useState("");
+
+  function handleSave() {
+    const trimmed = name.trim();
+    if (!trimmed) { setError("Full name is required"); return; }
+    const salary = Number(monthlySalary);
+    if (monthlySalary === "" || isNaN(salary) || salary < 0) {
+      setError("Enter a valid monthly salary");
+      return;
+    }
+    onSave({
+      name: trimmed, monthlySalary: salary,
+      phone: phone.trim() || undefined,
+      rssbNumber: rssbNumber.trim() || undefined,
+      idNumber: idNumber.trim() || undefined,
+    });
+  }
+
+  const fieldLabel: React.CSSProperties = {
+    display: "block", fontSize: 11, color: "#9ab89a", marginBottom: 6,
+    textTransform: "uppercase", letterSpacing: 0.8,
+  };
+
+  return (
+    <div style={{
+      position: "fixed", inset: 0, background: "rgba(0,0,0,0.82)",
+      zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: 24,
+    }}
+      onClick={(e) => e.target === e.currentTarget && onCancel()}
+    >
+      <div style={{
+        background: "#111e0f", border: "1px solid #2d4a2d",
+        borderRadius: 16, maxWidth: 420, width: "100%",
+        padding: 28, boxShadow: "0 24px 60px rgba(0,0,0,0.5)",
+        maxHeight: "90vh", overflowY: "auto",
+      }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+          <div style={{ fontSize: 16, fontWeight: "bold", color: "#c8e6c9" }}>{title}</div>
+          <button onClick={onCancel} style={{
+            width: 30, height: 30, borderRadius: "50%", border: "none",
+            background: "#1e3320", color: "#c8e6c9", fontSize: 18, cursor: "pointer",
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}>×</button>
+        </div>
+
+        <div style={{ marginBottom: 16 }}>
+          <label style={fieldLabel}>Full Name</label>
+          <input
+            type="text" value={name} placeholder="e.g. Jean Paul" autoFocus
+            onChange={(e) => { setName(e.target.value); setError(""); }}
+            style={{ borderColor: error && !name.trim() ? "#c0392b" : undefined }}
+          />
+        </div>
+
+        <div style={{ marginBottom: 16 }}>
+          <label style={fieldLabel}>Monthly Salary (RWF)</label>
+          <input
+            type="number" min={0} value={monthlySalary} placeholder="e.g. 50000"
+            onChange={(e) => { setMonthlySalary(e.target.value); setError(""); }}
+          />
+        </div>
+
+        <div style={{ marginBottom: 16 }}>
+          <label style={fieldLabel}>Phone No (optional)</label>
+          <input
+            type="text" value={phone} placeholder="e.g. 0791234567"
+            onChange={(e) => setPhone(e.target.value)}
+          />
+        </div>
+
+        <div style={{ display: "flex", gap: 12, marginBottom: 20 }}>
+          <div style={{ flex: 1 }}>
+            <label style={fieldLabel}>RSSB Number (optional)</label>
+            <input
+              type="text" value={rssbNumber} placeholder="e.g. 20856339J"
+              onChange={(e) => setRssbNumber(e.target.value)}
+            />
+          </div>
+          <div style={{ flex: 1 }}>
+            <label style={fieldLabel}>ID Number (optional)</label>
+            <input
+              type="text" value={idNumber} placeholder="National ID"
+              onChange={(e) => setIdNumber(e.target.value)}
+            />
+          </div>
+        </div>
+
+        {error && <div style={{ color: "#f87171", fontSize: 12, marginBottom: 16 }}>⚠ {error}</div>}
+
+        <div style={{ display: "flex", gap: 10 }}>
+          <button onClick={onCancel} style={{
+            flex: 1, padding: 12, borderRadius: 10,
+            border: "1px solid #2d4a2d", background: "transparent",
+            color: "#9ab89a", fontSize: 14, cursor: "pointer", fontFamily: "Georgia, serif",
+          }}>Cancel</button>
+          <button onClick={handleSave} style={{
+            flex: 2, padding: 12, borderRadius: 10, border: "none",
+            background: "#4a7c59", color: "white", fontSize: 14,
+            fontWeight: "bold", cursor: "pointer", fontFamily: "Georgia, serif",
+          }}>{initial ? "Save Changes" : "Add Employee"}</button>
         </div>
       </div>
     </div>
@@ -216,41 +328,69 @@ function MenuBtn({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => voi
   );
 }
 
-export function StaffOps({ state, isMobile }: { state: AppState; isMobile: boolean }) {
+export function StaffOps({ state, isMobile, onFlash }: { state: AppState; isMobile: boolean; onFlash?: (msg: string, type?: string) => void }) {
   const allTx = state.transactions;
-  const [employees, setEmployees] = useState<string[]>([]);
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [employeesLoading, setEmployeesLoading] = useState(true);
   const [addOpen, setAddOpen] = useState(false);
-  const [editTarget, setEditTarget] = useState<string | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [editTarget, setEditTarget] = useState<Employee | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Employee | null>(null);
 
   const [categories, setCategories] = useState<string[]>([]);
   const [catAddOpen, setCatAddOpen] = useState(false);
   const [catEditTarget, setCatEditTarget] = useState<string | null>(null);
   const [catDeleteTarget, setCatDeleteTarget] = useState<string | null>(null);
 
+  function fail(err: unknown) {
+    onFlash?.(err instanceof Error ? err.message : "Something went wrong", "error");
+  }
+
   useEffect(() => {
-    setEmployees(loadEmployees());
+    apiGetEmployees()
+      .then(setEmployees)
+      .catch(fail)
+      .finally(() => setEmployeesLoading(false));
     setCategories(loadCategories());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  function persistAndSet(list: string[]) {
-    setEmployees(list);
-    saveEmployees(list);
+  async function handleAdd(data: {
+    name: string; monthlySalary: number; phone?: string; rssbNumber?: string; idNumber?: string;
+  }) {
+    try {
+      const created = await apiCreateEmployee(data);
+      setEmployees((prev) => [...prev, created].sort((a, b) => a.name.localeCompare(b.name)));
+      setAddOpen(false);
+      onFlash?.(`${created.name} added to the team`);
+    } catch (err) {
+      fail(err);
+    }
   }
 
-  function handleAdd(name: string) {
-    persistAndSet([...employees, name]);
-    setAddOpen(false);
+  async function handleEdit(id: string, data: {
+    name: string; monthlySalary: number; phone?: string; rssbNumber?: string; idNumber?: string;
+  }) {
+    try {
+      const updated = await apiUpdateEmployee(id, data);
+      setEmployees((prev) =>
+        prev.map((e) => (e.id === id ? updated : e)).sort((a, b) => a.name.localeCompare(b.name))
+      );
+      setEditTarget(null);
+      onFlash?.("Employee updated");
+    } catch (err) {
+      fail(err);
+    }
   }
 
-  function handleEdit(oldName: string, newName: string) {
-    persistAndSet(employees.map((e) => (e === oldName ? newName : e)));
-    setEditTarget(null);
-  }
-
-  function handleDelete(name: string) {
-    persistAndSet(employees.filter((e) => e !== name));
-    setDeleteTarget(null);
+  async function handleDelete(emp: Employee) {
+    try {
+      await apiDeleteEmployee(emp.id);
+      setEmployees((prev) => prev.filter((e) => e.id !== emp.id));
+      setDeleteTarget(null);
+      onFlash?.(`${emp.name} removed`);
+    } catch (err) {
+      fail(err);
+    }
   }
 
   function persistAndSetCats(list: string[]) {
@@ -277,25 +417,23 @@ export function StaffOps({ state, isMobile }: { state: AppState; isMobile: boole
   return (
     <div>
       {addOpen && (
-        <NameModal
-          title="➕ Add Employee" label="Full Name" placeholder="e.g. Jean Paul"
-          submitLabel="Add Employee"
+        <EmployeeModal
+          title="➕ Add Employee"
           onSave={handleAdd} onCancel={() => setAddOpen(false)}
         />
       )}
       {editTarget && (
-        <NameModal
-          title="✏ Edit Employee" label="Full Name" placeholder="e.g. Jean Paul"
-          submitLabel="Add Employee"
+        <EmployeeModal
+          title="✏ Edit Employee"
           initial={editTarget}
-          onSave={(name) => handleEdit(editTarget, name)}
+          onSave={(data) => handleEdit(editTarget.id, data)}
           onCancel={() => setEditTarget(null)}
         />
       )}
       {deleteTarget && (
         <DeleteConfirm
           title="Remove Employee?"
-          name={deleteTarget}
+          name={deleteTarget.name}
           onConfirm={() => handleDelete(deleteTarget)}
           onCancel={() => setDeleteTarget(null)}
         />
@@ -328,7 +466,7 @@ export function StaffOps({ state, isMobile }: { state: AppState; isMobile: boole
 
       <div style={{ marginBottom: 20 }}>
         <h1 style={{ fontSize: 26, fontWeight: "bold", color: "#c8e6c9", margin: 0 }}>Staff & Ops</h1>
-        <p style={{ color: "#6a9c6a", marginTop: 4, fontSize: 13 }}>Team overview and all-time P&L</p>
+        <p style={{ color: "#6a9c6a", marginTop: 4, fontSize: 13 }}>Team overview, monthly and all-time P&L</p>
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 16, marginBottom: 16 }}>
@@ -351,13 +489,18 @@ export function StaffOps({ state, isMobile }: { state: AppState; isMobile: boole
               ➕ Add
             </button>
           </div>
-          {employees.length === 0 && (
+          {employeesLoading && (
+            <div style={{ color: "#3a5c3a", fontSize: 13, textAlign: "center", padding: "16px 0", fontStyle: "italic" }}>
+              Loading team…
+            </div>
+          )}
+          {!employeesLoading && employees.length === 0 && (
             <div style={{ color: "#3a5c3a", fontSize: 13, textAlign: "center", padding: "16px 0", fontStyle: "italic" }}>
               No employees yet. Add one above.
             </div>
           )}
           {employees.map((emp) => (
-            <div key={emp} style={{
+            <div key={emp.id} style={{
               display: "flex", alignItems: "center", gap: 10,
               padding: "8px 0", borderBottom: "1px solid #1e3320",
             }}>
@@ -367,10 +510,13 @@ export function StaffOps({ state, isMobile }: { state: AppState; isMobile: boole
                 justifyContent: "center", fontWeight: 800, color: "#4ade80", fontSize: 13,
                 flexShrink: 0,
               }}>
-                {emp[0]}
+                {emp.name[0]}
               </div>
-              <div style={{ flex: 1, fontSize: 13, color: "#c8e6c9", fontWeight: 600 }}>{emp}</div>
-              <Badge color="#40916C">Active</Badge>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 13, color: "#c8e6c9", fontWeight: 600 }}>{emp.name}</div>
+                <div style={{ fontSize: 11, color: "#6a9c6a" }}>{fmt(emp.monthlySalary)} / month</div>
+              </div>
+              <Badge color={emp.active ? "#40916C" : "#6a6a6a"}>{emp.active ? "Active" : "Inactive"}</Badge>
               {/* Three-dots menu */}
               <MenuBtn
                 onEdit={() => setEditTarget(emp)}
@@ -426,6 +572,86 @@ export function StaffOps({ state, isMobile }: { state: AppState; isMobile: boole
           ))}
         </Card>
       </div>
+
+      {/* Monthly Overview — revenue/expenses/net for every month with data */}
+      <Card style={{ marginBottom: 16, padding: 0, overflow: "hidden" }}>
+        <div style={{ fontWeight: 700, fontSize: 13, padding: "18px 20px 4px", color: "#c8e6c9" }}>
+          📅 Revenue &amp; Expenses by Month
+        </div>
+        {(() => {
+          const months = byMonth(allTx);
+          if (months.length === 0) {
+            return (
+              <div style={{ color: "#3a5c3a", fontSize: 13, textAlign: "center", padding: "20px", fontStyle: "italic" }}>
+                No transactions recorded yet.
+              </div>
+            );
+          }
+          if (isMobile) {
+            return (
+              <div style={{ padding: "10px 14px 16px", display: "flex", flexDirection: "column", gap: 10 }}>
+                {months.map((m) => {
+                  const net = m.revenue - m.expense;
+                  return (
+                    <div key={m.month} style={{
+                      border: "1px solid #1e3320", borderRadius: 12, padding: 12, background: "#162214",
+                    }}>
+                      <div style={{ fontWeight: 700, color: "#c8e6c9", fontSize: 13, marginBottom: 8 }}>
+                        {formatMonthLabel(m.month)}
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 4 }}>
+                        <span style={{ color: "#9ab89a" }}>Revenue</span>
+                        <span style={{ color: "#4ade80", fontWeight: 700 }}>{fmt(m.revenue)}</span>
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 4 }}>
+                        <span style={{ color: "#9ab89a" }}>Expenses</span>
+                        <span style={{ color: "#f87171", fontWeight: 700 }}>{fmt(m.expense)}</span>
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, paddingTop: 6, borderTop: "1px solid #1e3320" }}>
+                        <span style={{ color: "#c8e6c9", fontWeight: 700 }}>Net</span>
+                        <span style={{ color: net >= 0 ? "#4ade80" : "#f87171", fontWeight: 800 }}>{fmt(net)}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          }
+          return (
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, marginTop: 10 }}>
+                <thead>
+                  <tr style={{ background: "#162214", textAlign: "left" }}>
+                    {["Month", "Revenue", "Expenses", "Net"].map((h) => (
+                      <th key={h} style={{
+                        padding: "10px 20px", color: "#9ab89a", fontWeight: 700,
+                        fontSize: 11, textTransform: "uppercase", letterSpacing: 0.6,
+                      }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {months.map((m) => {
+                    const net = m.revenue - m.expense;
+                    return (
+                      <tr key={m.month} style={{ borderTop: "1px solid #1e3320" }}>
+                        <td style={{ padding: "10px 20px", fontWeight: 600, color: "#c8e6c9", whiteSpace: "nowrap" }}>
+                          {formatMonthLabel(m.month)}
+                        </td>
+                        <td style={{ padding: "10px 20px", color: "#4ade80", fontWeight: 700 }}>{fmt(m.revenue)}</td>
+                        <td style={{ padding: "10px 20px", color: "#f87171", fontWeight: 700 }}>{fmt(m.expense)}</td>
+                        <td style={{ padding: "10px 20px", fontWeight: 800, color: net >= 0 ? "#4ade80" : "#f87171" }}>
+                          {fmt(net)}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          );
+        })()}
+      </Card>
 
       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 16, marginBottom: 16 }}>
         {/* REVENUE BY PRODUCT */}

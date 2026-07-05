@@ -42,7 +42,9 @@ export function initState(): AppState {
     const v5 = localStorage.getItem("miru_ops_v5");
     if (v5) {
       const parsed = JSON.parse(v5) as AppState;
-      return normalize(parsed);
+      // Always open on today's date rather than whatever date was last
+      // viewed in a previous session.
+      return normalize({ ...parsed, activeDate: todayStr() });
     }
 
     const v4 = localStorage.getItem("miru_ops_v4");
@@ -50,7 +52,7 @@ export function initState(): AppState {
       const parsed = JSON.parse(v4) as Partial<AppState>;
       return normalize({
         transactions: parsed.transactions ?? [],
-        activeDate: parsed.activeDate ?? todayStr(),
+        activeDate: todayStr(),
         floats: parsed.floats ?? {},
       });
     }
@@ -239,6 +241,27 @@ export function bySite(
     out[t.site][t.kind] += t.amount;
   });
   return out;
+}
+
+/**
+ * Groups revenue/expense totals by calendar month (YYYY-MM), across
+ * whatever months actually have transactions — so June stays visible
+ * alongside July onward rather than being cut off. Returned in
+ * descending order (most recent month first).
+ */
+export function byMonth(
+  txs: Transaction[]
+): { month: string; revenue: number; expense: number }[] {
+  const out: Record<string, { revenue: number; expense: number }> = {};
+  txs.forEach((t) => {
+    if (t.kind !== "revenue" && t.kind !== "expense") return;
+    const month = t.date.slice(0, 7); // YYYY-MM
+    if (!out[month]) out[month] = { revenue: 0, expense: 0 };
+    out[month][t.kind] += t.amount;
+  });
+  return Object.entries(out)
+    .map(([month, totals]) => ({ month, ...totals }))
+    .sort((a, b) => b.month.localeCompare(a.month));
 }
 
 export function mealsBySiteToday(txs: Transaction[]): Record<string, number> {

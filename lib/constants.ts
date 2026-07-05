@@ -61,17 +61,11 @@ export const RAW_MATERIALS = [
 ] as const;
 
 export type RawMaterialId = (typeof RAW_MATERIALS)[number]["id"];
-export const DEFAULT_EMPLOYEES = [
-  "Emmanuel",
-  "Claudine",
-  "Jean Pierre",
-  "Anitha",
-  "Kevin",
-  "Solange",
-] as const;
 
-// Mutable list — managed via localStorage in StaffOps
-export const EMPLOYEES: string[] = [...DEFAULT_EMPLOYEES];
+// NOTE: the employee roster used to live here as a hardcoded list managed
+// via localStorage. It's now a real Employee collection in the database
+// (see lib/models/Employee.ts, app/api/employees) so the team is shared
+// across devices instead of per-browser.
 
 // ─── LOW-FLOAT THRESHOLD ────────────────────────────────────────────────────
 export const LOW_FLOAT_THRESHOLD = 10_000; // RWF
