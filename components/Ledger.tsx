@@ -22,14 +22,14 @@ const selectSt: React.CSSProperties = {
   border: "1.5px solid #1e3320", borderRadius: 10,
   padding: "8px 12px", fontSize: 13, outline: "none",
   background: "#111e0f", color: "#e8dcc8", width: "100%",
-  fontFamily: "Georgia, serif",
+  fontFamily: "var(--font-eb-garamond), Georgia, serif",
 };
 
 const inputSt: React.CSSProperties = {
   border: "1.5px solid #1e3320", borderRadius: 10,
   padding: "8px 12px", fontSize: 13, outline: "none",
   background: "#111e0f", color: "#e8dcc8", width: "100%",
-  fontFamily: "Georgia, serif",
+  fontFamily: "var(--font-eb-garamond), Georgia, serif",
 };
 
 // ── Date Group Header ──────────────────────────────────────────
@@ -196,7 +196,7 @@ export function Ledger({
               background: hasFilters ? "#162214" : "transparent",
               color: hasFilters ? "#4ade80" : "#9ab89a",
               fontSize: 12, fontWeight: 700, cursor: "pointer",
-              fontFamily: "Georgia, serif",
+              fontFamily: "var(--font-eb-garamond), Georgia, serif",
             }}
           >
             🔽 Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
@@ -304,7 +304,7 @@ export function Ledger({
                   padding: "8px 16px", borderRadius: 8,
                   border: "1px solid #2d4a2d", background: "transparent",
                   color: "#9ab89a", fontSize: 12, cursor: "pointer",
-                  fontFamily: "Georgia, serif", whiteSpace: "nowrap",
+                  fontFamily: "var(--font-eb-garamond), Georgia, serif", whiteSpace: "nowrap",
                   alignSelf: "flex-end",
                 }}
               >

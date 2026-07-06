@@ -142,7 +142,7 @@ export function EntryFormPanel({
     borderRadius: 8,
     color: "#c8e6c9",
     fontSize: 13,
-    fontFamily: "Georgia, serif",
+    fontFamily: "var(--font-eb-garamond), Georgia, serif",
     cursor: "pointer",
     appearance: "none" as const,
     backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236a9c6a' d='M6 8L1 3h10z'/%3E%3C/svg%3E")`,
@@ -184,7 +184,7 @@ export function EntryFormPanel({
                 style={{
                   flex: 1, padding: 12, borderRadius: 10,
                   border: "1px solid #2d4a2d", background: "transparent",
-                  color: "#9ab89a", fontSize: 14, cursor: "pointer", fontFamily: "Georgia, serif",
+                  color: "#9ab89a", fontSize: 14, cursor: "pointer", fontFamily: "var(--font-eb-garamond), Georgia, serif",
                 }}
               >Cancel</button>
               <button
@@ -192,7 +192,7 @@ export function EntryFormPanel({
                 style={{
                   flex: 1, padding: 12, borderRadius: 10, border: "none",
                   background: "#b45309", color: "white", fontSize: 14,
-                  fontWeight: "bold", cursor: "pointer", fontFamily: "Georgia, serif",
+                  fontWeight: "bold", cursor: "pointer", fontFamily: "var(--font-eb-garamond), Georgia, serif",
                 }}
               >Save Anyway</button>
             </div>
@@ -309,7 +309,7 @@ export function EntryFormPanel({
                       border: "none", borderRadius: 8,
                       background: "#4a7c59", color: "white",
                       fontSize: 13, fontWeight: 700, cursor: "pointer",
-                      fontFamily: "Georgia, serif",
+                      fontFamily: "var(--font-eb-garamond), Georgia, serif",
                     }}
                   >Add</button>
                   <button
@@ -414,7 +414,7 @@ export function EntryFormPanel({
           width: "100%", background: submitting ? "#3a5c3a" : "#4a7c59", color: "#fff",
           border: "none", borderRadius: 12, padding: "14px",
           fontWeight: "bold", fontSize: 16, cursor: submitting ? "default" : "pointer",
-          fontFamily: "Georgia, serif", transition: "opacity 0.2s",
+          fontFamily: "var(--font-eb-garamond), Georgia, serif", transition: "opacity 0.2s",
           boxShadow: "0 4px 16px rgba(74,124,89,0.3)",
           opacity: submitting ? 0.7 : 1,
         }}>

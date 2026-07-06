@@ -94,12 +94,12 @@ function NameModal({
           <button onClick={onCancel} style={{
             flex: 1, padding: 12, borderRadius: 10,
             border: "1px solid #2d4a2d", background: "transparent",
-            color: "#9ab89a", fontSize: 14, cursor: "pointer", fontFamily: "Georgia, serif",
+            color: "#9ab89a", fontSize: 14, cursor: "pointer", fontFamily: "var(--font-eb-garamond), Georgia, serif",
           }}>Cancel</button>
           <button onClick={handleSave} style={{
             flex: 2, padding: 12, borderRadius: 10, border: "none",
             background: "#4a7c59", color: "white", fontSize: 14,
-            fontWeight: "bold", cursor: "pointer", fontFamily: "Georgia, serif",
+            fontWeight: "bold", cursor: "pointer", fontFamily: "var(--font-eb-garamond), Georgia, serif",
           }}>{initial ? "Save Changes" : submitLabel}</button>
         </div>
       </div>
@@ -216,12 +216,12 @@ function EmployeeModal({
           <button onClick={onCancel} style={{
             flex: 1, padding: 12, borderRadius: 10,
             border: "1px solid #2d4a2d", background: "transparent",
-            color: "#9ab89a", fontSize: 14, cursor: "pointer", fontFamily: "Georgia, serif",
+            color: "#9ab89a", fontSize: 14, cursor: "pointer", fontFamily: "var(--font-eb-garamond), Georgia, serif",
           }}>Cancel</button>
           <button onClick={handleSave} style={{
             flex: 2, padding: 12, borderRadius: 10, border: "none",
             background: "#4a7c59", color: "white", fontSize: 14,
-            fontWeight: "bold", cursor: "pointer", fontFamily: "Georgia, serif",
+            fontWeight: "bold", cursor: "pointer", fontFamily: "var(--font-eb-garamond), Georgia, serif",
           }}>{initial ? "Save Changes" : "Add Employee"}</button>
         </div>
       </div>
@@ -255,12 +255,12 @@ function DeleteConfirm({ title, name, onConfirm, onCancel }: {
           <button onClick={onCancel} style={{
             flex: 1, padding: 12, borderRadius: 10,
             border: "1px solid #2d4a2d", background: "transparent",
-            color: "#c8e6c9", fontSize: 14, cursor: "pointer", fontFamily: "Georgia, serif",
+            color: "#c8e6c9", fontSize: 14, cursor: "pointer", fontFamily: "var(--font-eb-garamond), Georgia, serif",
           }}>Cancel</button>
           <button onClick={onConfirm} style={{
             flex: 1, padding: 12, borderRadius: 10, border: "none",
             background: "#c0392b", color: "white", fontSize: 14,
-            fontWeight: "bold", cursor: "pointer", fontFamily: "Georgia, serif",
+            fontWeight: "bold", cursor: "pointer", fontFamily: "var(--font-eb-garamond), Georgia, serif",
           }}>Remove</button>
         </div>
       </div>
@@ -305,7 +305,7 @@ function MenuBtn({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => voi
             style={{
               width: "100%", padding: "10px 14px", border: "none",
               borderBottom: "1px solid #1e3320", background: "transparent",
-              color: "#c8e6c9", fontSize: 13, fontFamily: "Georgia, serif",
+              color: "#c8e6c9", fontSize: 13, fontFamily: "var(--font-eb-garamond), Georgia, serif",
               cursor: "pointer", textAlign: "left", display: "flex", alignItems: "center", gap: 8,
             }}
             onMouseEnter={(e) => (e.currentTarget.style.background = "#1e3320")}
@@ -316,7 +316,7 @@ function MenuBtn({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => voi
             style={{
               width: "100%", padding: "10px 14px", border: "none",
               background: "transparent", color: "#f87171", fontSize: 13,
-              fontFamily: "Georgia, serif", cursor: "pointer",
+              fontFamily: "var(--font-eb-garamond), Georgia, serif", cursor: "pointer",
               textAlign: "left", display: "flex", alignItems: "center", gap: 8,
             }}
             onMouseEnter={(e) => (e.currentTarget.style.background = "#2a0a0a")}
@@ -483,7 +483,7 @@ export function StaffOps({ state, isMobile, onFlash }: { state: AppState; isMobi
                 padding: "5px 12px", borderRadius: 8,
                 border: "1px solid #2d4a2d", background: "#162214",
                 color: "#4ade80", fontSize: 12, fontWeight: 700,
-                cursor: "pointer", fontFamily: "Georgia, serif",
+                cursor: "pointer", fontFamily: "var(--font-eb-garamond), Georgia, serif",
               }}
             >
               ➕ Add
@@ -539,7 +539,7 @@ export function StaffOps({ state, isMobile, onFlash }: { state: AppState; isMobi
                 padding: "5px 12px", borderRadius: 8,
                 border: "1px solid #2d4a2d", background: "#162214",
                 color: "#f87171", fontSize: 12, fontWeight: 700,
-                cursor: "pointer", fontFamily: "Georgia, serif",
+                cursor: "pointer", fontFamily: "var(--font-eb-garamond), Georgia, serif",
               }}
             >
               ➕ Add

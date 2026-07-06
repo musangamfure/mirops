@@ -50,7 +50,7 @@ function PaidBtn({ paid, onClick }: { paid: boolean; onClick: () => void }) {
       onClick={onClick}
       style={{
         border: "none", borderRadius: 8, padding: "5px 12px", fontSize: 12, fontWeight: 700,
-        cursor: "pointer", fontFamily: "Georgia, serif", whiteSpace: "nowrap",
+        cursor: "pointer", fontFamily: "var(--font-eb-garamond), Georgia, serif", whiteSpace: "nowrap",
         background: paid ? "#1b4332" : "#3a1515",
         color: paid ? "#4ade80" : "#f87171",
       }}

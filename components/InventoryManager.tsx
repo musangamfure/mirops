@@ -21,7 +21,7 @@ const labelSt: React.CSSProperties = {
 const selStyle: React.CSSProperties = {
   width: "100%", padding: "9px 12px", background: "#162214",
   border: "1px solid #2d4a2d", borderRadius: 8, color: "#c8e6c9",
-  fontSize: 13, fontFamily: "Georgia, serif", cursor: "pointer",
+  fontSize: 13, fontFamily: "var(--font-eb-garamond), Georgia, serif", cursor: "pointer",
   appearance: "none" as const,
   backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236a9c6a' d='M6 8L1 3h10z'/%3E%3C/svg%3E")`,
   backgroundRepeat: "no-repeat", backgroundPosition: "right 10px center", paddingRight: 32,
@@ -80,7 +80,7 @@ function DotsMenu({
                   padding: "9px 14px", border: "none", background: "transparent",
                   color: it.disabled ? "#3a5c3a" : it.danger ? "#f87171" : "#c8e6c9",
                   fontSize: 12, fontWeight: 600, cursor: it.disabled ? "default" : "pointer",
-                  fontFamily: "Georgia, serif",
+                  fontFamily: "var(--font-eb-garamond), Georgia, serif",
                 }}
               >{it.label}</button>
             ))}
@@ -191,12 +191,12 @@ function MovementModal({
           <button onClick={onCancel} style={{
             flex: 1, padding: 12, borderRadius: 10,
             border: "1px solid #2d4a2d", background: "transparent",
-            color: "#9ab89a", fontSize: 14, cursor: "pointer", fontFamily: "Georgia, serif",
+            color: "#9ab89a", fontSize: 14, cursor: "pointer", fontFamily: "var(--font-eb-garamond), Georgia, serif",
           }}>Cancel</button>
           <button onClick={handleSave} style={{
             flex: 2, padding: 12, borderRadius: 10, border: "none",
             background: "#4a7c59", color: "white", fontSize: 14,
-            fontWeight: "bold", cursor: "pointer", fontFamily: "Georgia, serif",
+            fontWeight: "bold", cursor: "pointer", fontFamily: "var(--font-eb-garamond), Georgia, serif",
           }}>Save Movement</button>
         </div>
       </div>
@@ -316,12 +316,12 @@ function EditMovementModal({
           <button onClick={onCancel} style={{
             flex: 1, padding: 12, borderRadius: 10,
             border: "1px solid #2d4a2d", background: "transparent",
-            color: "#9ab89a", fontSize: 14, cursor: "pointer", fontFamily: "Georgia, serif",
+            color: "#9ab89a", fontSize: 14, cursor: "pointer", fontFamily: "var(--font-eb-garamond), Georgia, serif",
           }}>Cancel</button>
           <button onClick={handleSave} style={{
             flex: 2, padding: 12, borderRadius: 10, border: "none",
             background: "#4a7c59", color: "white", fontSize: 14,
-            fontWeight: "bold", cursor: "pointer", fontFamily: "Georgia, serif",
+            fontWeight: "bold", cursor: "pointer", fontFamily: "var(--font-eb-garamond), Georgia, serif",
           }}>Save Changes</button>
         </div>
       </div>
@@ -356,12 +356,12 @@ function ConfirmModal({
           <button onClick={onCancel} style={{
             flex: 1, padding: 12, borderRadius: 10,
             border: "1px solid #2d4a2d", background: "transparent",
-            color: "#9ab89a", fontSize: 14, cursor: "pointer", fontFamily: "Georgia, serif",
+            color: "#9ab89a", fontSize: 14, cursor: "pointer", fontFamily: "var(--font-eb-garamond), Georgia, serif",
           }}>Cancel</button>
           <button onClick={onConfirm} style={{
             flex: 1, padding: 12, borderRadius: 10, border: "none",
             background: "#b91c1c", color: "white", fontSize: 14,
-            fontWeight: "bold", cursor: "pointer", fontFamily: "Georgia, serif",
+            fontWeight: "bold", cursor: "pointer", fontFamily: "var(--font-eb-garamond), Georgia, serif",
           }}>Delete</button>
         </div>
       </div>
@@ -466,12 +466,12 @@ function NewMaterialModal({
           <button onClick={onCancel} style={{
             flex: 1, padding: 12, borderRadius: 10,
             border: "1px solid #2d4a2d", background: "transparent",
-            color: "#9ab89a", fontSize: 14, cursor: "pointer", fontFamily: "Georgia, serif",
+            color: "#9ab89a", fontSize: 14, cursor: "pointer", fontFamily: "var(--font-eb-garamond), Georgia, serif",
           }}>Cancel</button>
           <button onClick={handleSave} style={{
             flex: 2, padding: 12, borderRadius: 10, border: "none",
             background: "#4a7c59", color: "white", fontSize: 14,
-            fontWeight: "bold", cursor: "pointer", fontFamily: "Georgia, serif",
+            fontWeight: "bold", cursor: "pointer", fontFamily: "var(--font-eb-garamond), Georgia, serif",
           }}>Add Material</button>
         </div>
       </div>
@@ -491,7 +491,7 @@ type MixRow = { rowId: string; itemId: string; quantity: string };
 const inputSt: React.CSSProperties = {
   width: "100%", padding: "9px 12px", background: "#162214",
   border: "1px solid #2d4a2d", borderRadius: 8, color: "#c8e6c9",
-  fontSize: 13, fontFamily: "Georgia, serif",
+  fontSize: 13, fontFamily: "var(--font-eb-garamond), Georgia, serif",
 };
 
 function BatchModal({
@@ -667,7 +667,7 @@ function BatchModal({
             <button onClick={addMixRow} style={{
               padding: "4px 10px", borderRadius: 7, border: "1px solid #2d4a2d",
               background: "#162214", color: "#4ade80", fontSize: 11, fontWeight: 700,
-              cursor: "pointer", fontFamily: "Georgia, serif",
+              cursor: "pointer", fontFamily: "var(--font-eb-garamond), Georgia, serif",
             }}>+ Add material</button>
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -797,12 +797,12 @@ function BatchModal({
           <button onClick={onCancel} style={{
             flex: 1, padding: 12, borderRadius: 10,
             border: "1px solid #2d4a2d", background: "transparent",
-            color: "#9ab89a", fontSize: 14, cursor: "pointer", fontFamily: "Georgia, serif",
+            color: "#9ab89a", fontSize: 14, cursor: "pointer", fontFamily: "var(--font-eb-garamond), Georgia, serif",
           }}>Cancel</button>
           <button onClick={handleSave} style={{
             flex: 2, padding: 12, borderRadius: 10, border: "none",
             background: shortfalls.length > 0 ? "#b45309" : "#4a7c59", color: "white", fontSize: 14,
-            fontWeight: "bold", cursor: "pointer", fontFamily: "Georgia, serif",
+            fontWeight: "bold", cursor: "pointer", fontFamily: "var(--font-eb-garamond), Georgia, serif",
           }}>{shortfalls.length > 0 ? "Save Anyway" : isEdit ? "Save Changes" : "Log Batch"}</button>
         </div>
       </div>
@@ -855,12 +855,12 @@ function ThresholdModal({
           <button onClick={onCancel} style={{
             flex: 1, padding: 12, borderRadius: 10,
             border: "1px solid #2d4a2d", background: "transparent",
-            color: "#9ab89a", fontSize: 14, cursor: "pointer", fontFamily: "Georgia, serif",
+            color: "#9ab89a", fontSize: 14, cursor: "pointer", fontFamily: "var(--font-eb-garamond), Georgia, serif",
           }}>Cancel</button>
           <button onClick={() => onSave(Number(value) || 0)} style={{
             flex: 2, padding: 12, borderRadius: 10, border: "none",
             background: "#4a7c59", color: "white", fontSize: 14,
-            fontWeight: "bold", cursor: "pointer", fontFamily: "Georgia, serif",
+            fontWeight: "bold", cursor: "pointer", fontFamily: "var(--font-eb-garamond), Georgia, serif",
           }}>Save</button>
         </div>
       </div>
@@ -933,7 +933,7 @@ function MaterialCard({
           width: "100%", padding: "8px", borderRadius: 8,
           border: "1px solid #2d4a2d", background: "#162214",
           color: "#4ade80", fontSize: 12, fontWeight: 700, cursor: "pointer",
-          fontFamily: "Georgia, serif", marginTop: 8,
+          fontFamily: "var(--font-eb-garamond), Georgia, serif", marginTop: 8,
         }}
       >+ Stock Movement</button>
     </div>
@@ -1127,7 +1127,7 @@ export function InventoryManager({ isMobile, onFlash }: {
         <button onClick={loadAll} style={{
           padding: "8px 16px", borderRadius: 8, border: "1px solid #2d4a2d",
           background: "#162214", color: "#4ade80", fontSize: 13, fontWeight: 700,
-          cursor: "pointer", fontFamily: "Georgia, serif",
+          cursor: "pointer", fontFamily: "var(--font-eb-garamond), Georgia, serif",
         }}>Retry</button>
       </Card>
     );
@@ -1206,7 +1206,7 @@ export function InventoryManager({ isMobile, onFlash }: {
               display: "flex", alignItems: "center", gap: 6,
               padding: "10px 18px", borderRadius: 10, border: "1px solid #2d4a2d",
               background: "#162214", color: "#4ade80", fontSize: 13, fontWeight: 700,
-              cursor: "pointer", fontFamily: "Georgia, serif", width: isMobile ? "100%" : "auto",
+              cursor: "pointer", fontFamily: "var(--font-eb-garamond), Georgia, serif", width: isMobile ? "100%" : "auto",
               justifyContent: "center",
             }}
           >🌱 Add Material</button>
@@ -1216,7 +1216,7 @@ export function InventoryManager({ isMobile, onFlash }: {
               display: "flex", alignItems: "center", gap: 6,
               padding: "10px 18px", borderRadius: 10, border: "none",
               background: "#4a7c59", color: "white", fontSize: 13, fontWeight: 700,
-              cursor: "pointer", fontFamily: "Georgia, serif", width: isMobile ? "100%" : "auto",
+              cursor: "pointer", fontFamily: "var(--font-eb-garamond), Georgia, serif", width: isMobile ? "100%" : "auto",
               justifyContent: "center",
             }}
           >🧫 Log Production Batch</button>
@@ -1267,7 +1267,7 @@ export function InventoryManager({ isMobile, onFlash }: {
                 padding: "6px 14px", borderRadius: 8, border: "1px solid #2d4a2d",
                 background: historyView === v ? "#1e3320" : "transparent",
                 color: historyView === v ? "#4ade80" : "#9ab89a",
-                fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "Georgia, serif",
+                fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "var(--font-eb-garamond), Georgia, serif",
               }}
             >{v === "movements" ? "Stock Movements" : "Production Batches"}</button>
           ))}
