@@ -59,7 +59,7 @@ function DeleteModal({
             flex: 1, padding: 13, borderRadius: 10,
             border: "1px solid #2d4a2d", background: "transparent",
             color: "#c8e6c9", fontSize: 15, cursor: "pointer",
-            fontFamily: "var(--font-eb-garamond), Georgia, serif",
+            fontFamily: "var(--font-serif), Georgia, serif",
           }}>
             Cancel
           </button>
@@ -67,7 +67,7 @@ function DeleteModal({
             flex: 1, padding: 13, borderRadius: 10,
             border: "none", background: "#c0392b",
             color: "white", fontSize: 15, fontWeight: "bold",
-            cursor: "pointer", fontFamily: "var(--font-eb-garamond), Georgia, serif",
+            cursor: "pointer", fontFamily: "var(--font-serif), Georgia, serif",
           }}>
             Delete
           </button>
@@ -146,7 +146,7 @@ function EditModal({
     borderRadius: 8,
     color: "#c8e6c9",
     fontSize: 13,
-    fontFamily: "var(--font-eb-garamond), Georgia, serif",
+    fontFamily: "var(--font-serif), Georgia, serif",
     cursor: "pointer",
     appearance: "none" as const,
     backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236a9c6a' d='M6 8L1 3h10z'/%3E%3C/svg%3E")`,
@@ -272,12 +272,12 @@ function EditModal({
             flex: 1, padding: 13, borderRadius: 10,
             border: "1px solid #2d4a2d", background: "transparent",
             color: "#9ab89a", fontSize: 14, cursor: "pointer",
-            fontFamily: "var(--font-eb-garamond), Georgia, serif",
+            fontFamily: "var(--font-serif), Georgia, serif",
           }}>Cancel</button>
           <button onClick={handleSave} style={{
             flex: 2, padding: 13, borderRadius: 10, border: "none",
             background: "#4a7c59", color: "white", fontSize: 14,
-            fontWeight: "bold", cursor: "pointer", fontFamily: "var(--font-eb-garamond), Georgia, serif",
+            fontWeight: "bold", cursor: "pointer", fontFamily: "var(--font-serif), Georgia, serif",
           }}>Save Changes</button>
         </div>
       </div>
@@ -353,7 +353,7 @@ function CrudGroupBtns({
               width: "100%", padding: "10px 14px",
               border: "none", borderBottom: "1px solid #1e3320",
               background: "transparent", color: "#c8e6c9",
-              fontSize: 13, fontFamily: "var(--font-eb-garamond), Georgia, serif",
+              fontSize: 13, fontFamily: "var(--font-serif), Georgia, serif",
               cursor: "pointer", textAlign: "left",
               display: "flex", alignItems: "center", gap: 8,
             }}
@@ -368,7 +368,7 @@ function CrudGroupBtns({
               width: "100%", padding: "10px 14px",
               border: "none", background: "transparent",
               color: "#f87171", fontSize: 13,
-              fontFamily: "var(--font-eb-garamond), Georgia, serif", cursor: "pointer",
+              fontFamily: "var(--font-serif), Georgia, serif", cursor: "pointer",
               textAlign: "left", display: "flex", alignItems: "center", gap: 8,
             }}
             onMouseEnter={(e) => (e.currentTarget.style.background = "#2a0a0a")}
@@ -876,7 +876,7 @@ export function Dashboard({
                   background: "transparent", border: "1px solid #2d4a2d",
                   borderRadius: 10, color: "#4ade80", fontSize: 13,
                   fontWeight: 700, cursor: onViewLedger ? "pointer" : "default",
-                  fontFamily: "var(--font-eb-garamond), Georgia, serif",
+                  fontFamily: "var(--font-serif), Georgia, serif",
                 }}
               >
                 View all {dayNonTopupTx.length} entries in Ledger →

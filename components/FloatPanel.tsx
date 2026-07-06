@@ -75,7 +75,7 @@ export function FloatPanel({
             <button type="button" onClick={saveOpen} style={{
               background: "#4a7c59", color: "#fff", border: "none", borderRadius: 8,
               padding: "6px 12px", fontWeight: 700, cursor: "pointer", fontSize: 13,
-              fontFamily: "var(--font-eb-garamond), Georgia, serif",
+              fontFamily: "var(--font-serif), Georgia, serif",
             }}>Set</button>
           </div>
           {openError && <div style={{ fontSize: 11, color: "#f87171", marginTop: 4 }}>{openError}</div>}
@@ -140,7 +140,7 @@ export function FloatPanel({
           <button type="button" onClick={() => setShowTopup(true)} style={{
             background: "#7c3aed", color: "#fff", border: "none", borderRadius: 8,
             padding: "8px 14px", fontWeight: 700, cursor: "pointer",
-            fontSize: 13, width: "100%", fontFamily: "var(--font-eb-garamond), Georgia, serif",
+            fontSize: 13, width: "100%", fontFamily: "var(--font-serif), Georgia, serif",
           }}>+ Add Money</button>
         </>
       ) : (
@@ -156,11 +156,11 @@ export function FloatPanel({
           <div style={{ display: "flex", gap: 6 }}>
             <button type="button" onClick={saveTopup} style={{
               flex: 1, background: "#7c3aed", color: "#fff", border: "none", borderRadius: 8,
-              padding: "7px", fontWeight: 700, cursor: "pointer", fontSize: 13, fontFamily: "var(--font-eb-garamond), Georgia, serif",
+              padding: "7px", fontWeight: 700, cursor: "pointer", fontSize: 13, fontFamily: "var(--font-serif), Georgia, serif",
             }}>Save</button>
             <button type="button" onClick={() => { setShowTopup(false); setTopupAmt(""); setTopupNote(""); setTopupError(""); }} style={{
               background: "#1e3320", color: "#9ab89a", border: "none", borderRadius: 8,
-              padding: "7px 10px", fontWeight: 700, cursor: "pointer", fontSize: 13, fontFamily: "var(--font-eb-garamond), Georgia, serif",
+              padding: "7px 10px", fontWeight: 700, cursor: "pointer", fontSize: 13, fontFamily: "var(--font-serif), Georgia, serif",
             }}>✕</button>
           </div>
         </div>

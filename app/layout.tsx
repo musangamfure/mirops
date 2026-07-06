@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import { EB_Garamond } from "next/font/google";
+import { IBM_Plex_Serif } from "next/font/google";
 import "./globals.css";
 
-const ebGaramond = EB_Garamond({
+const plexSerif = IBM_Plex_Serif({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
-  variable: "--font-eb-garamond",
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-serif",
   display: "swap",
 });
 
@@ -20,7 +20,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={ebGaramond.variable}>
+    <html lang="en" className={plexSerif.variable}>
       <body>{children}</body>
     </html>
   );

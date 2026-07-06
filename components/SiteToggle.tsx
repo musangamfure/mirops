@@ -13,7 +13,7 @@ export function SiteToggle({ value, onChange }: { value: SiteId; onChange: (id: 
           fontWeight: 700, fontSize: 13, cursor: "pointer",
           color: value === s.id ? "#4ade80" : "#6a9c6a",
           display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-          fontFamily: "var(--font-eb-garamond), Georgia, serif", transition: "all 0.2s",
+          fontFamily: "var(--font-serif), Georgia, serif", transition: "all 0.2s",
         }}>
           <span>{s.emoji}</span> {s.label}
         </button>

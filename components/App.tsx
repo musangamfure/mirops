@@ -222,7 +222,7 @@ export default function App() {
                 color: tab === t.id ? "#fff" : "#9ab89a",
                 fontWeight: tab === t.id ? "bold" : "normal",
                 transition: "all 0.2s",
-                fontFamily: "var(--font-eb-garamond), Georgia, serif",
+                fontFamily: "var(--font-serif), Georgia, serif",
               }}>
                 {t.icon} {t.label}
               </button>
@@ -287,7 +287,7 @@ export default function App() {
               <span style={{ fontSize: 20 }}>{t.icon}</span>
               <span style={{
                 fontSize: 10, color: tab === t.id ? "#4ade80" : "#6a9c6a",
-                fontFamily: "var(--font-eb-garamond), Georgia, serif",
+                fontFamily: "var(--font-serif), Georgia, serif",
               }}>{t.short}</span>
               {tab === t.id && (
                 <div style={{ width: 20, height: 2, borderRadius: 1, background: "#4ade80" }} />
