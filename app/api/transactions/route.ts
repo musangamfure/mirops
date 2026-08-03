@@ -59,14 +59,17 @@ export async function GET() {
 }
 
 // POST /api/transactions — create a new transaction
-// Body: { id, kind, date, amount, note?, product?, site?, category?, mealSession? }
+// Body: { id, kind, date, amount, note?, product?, site?, category?, mealSession?, bulkStart?, bulkEnd? }
 // `id` is the client-generated id (also used as the Mongo _id) so the
 // reducer's optimistic local state and the database stay in sync.
 export async function POST(req: Request) {
   try {
     await connectDB();
     const body = await req.json();
-    const { id, kind, date, amount, note, product, site, category, mealSession } = body;
+    const {
+      id, kind, date, amount, note, product, site, category, mealSession,
+      bulkStart, bulkEnd,
+    } = body;
 
     if (!id || !kind || !date || amount === undefined || amount === null) {
       return NextResponse.json(
@@ -98,6 +101,8 @@ export async function POST(req: Request) {
       site,
       category,
       mealSession,
+      bulkStart,
+      bulkEnd,
     });
     const normalized = normalize(tx.toObject());
 

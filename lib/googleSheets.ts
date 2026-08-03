@@ -18,7 +18,10 @@ const SA_EMAIL = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
 const SA_KEY = process.env.GOOGLE_SERVICE_ACCOUNT_KEY?.replace(/\\n/g, "\n");
 
 const SHEET_TAB = "Transactions";
-const SHEET_RANGE = `${SHEET_TAB}!A:K`;
+// Bulk Start/End were appended as K/L after the original A:K columns so
+// existing hardcoded column refs (e.g. the Note column, "I", used by the
+// delete-marker below) stay correct.
+const SHEET_RANGE = `${SHEET_TAB}!A:L`;
 
 export function isSheetsSyncConfigured(): boolean {
   return Boolean(SHEET_ID && SA_EMAIL && SA_KEY);
@@ -43,6 +46,7 @@ function getSheetsClient() {
 const HEADER_ROW = [
   "ID", "Date", "Kind", "Product", "Category", "Site",
   "Meal Session", "Amount (RWF)", "Note", "Recorded At",
+  "Bulk Start", "Bulk End",
 ];
 
 function productLabel(id?: string): string {
@@ -65,6 +69,8 @@ function txToRow(t: Transaction): string[] {
     String(t.amount),
     t.note ?? "",
     new Date().toISOString(),
+    t.bulkStart ?? "",
+    t.bulkEnd ?? "",
   ];
 }
 

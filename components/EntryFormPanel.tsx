@@ -11,6 +11,7 @@ import type { AppAction, EntryForm, Transaction } from "@/lib/types";
 const EMPTY_FORM: EntryForm = {
   kind: "revenue", product: "tubes", site: "mageragere",
   category: "", mealSession: "Lunch",
+  isBulk: false, bulkStart: "", bulkEnd: "",
   amount: "", note: "",
 };
 
@@ -96,8 +97,12 @@ export function EntryFormPanel({
       product: form.kind === "revenue" ? form.product : undefined,
       category: isExpense ? form.category : undefined,
       mealSession: isMeal ? form.mealSession : undefined,
+      bulkStart: isMeal && form.isBulk ? form.bulkStart : undefined,
+      bulkEnd: isMeal && form.isBulk ? form.bulkEnd : undefined,
     };
   }
+
+  const isBulkMeal = isMeal && form.isBulk;
 
   function submit() {
     if (submitting) return; // guards against double-tap / double-click firing two saves
@@ -110,6 +115,14 @@ export function EntryFormPanel({
     }
     if (isOther && !form.note.trim()) {
       setError("Add a description for Other"); return;
+    }
+    if (isBulkMeal) {
+      if (!form.bulkStart || !form.bulkEnd) {
+        setError("Set a start and end date for the bulk purchase"); return;
+      }
+      if (form.bulkEnd < form.bulkStart) {
+        setError("Bulk end date can't be before the start date"); return;
+      }
     }
 
     const payload = buildPayload();
@@ -125,7 +138,10 @@ export function EntryFormPanel({
   function doSave(payload: ReturnType<typeof buildPayload>) {
     setSubmitting(true);
     dispatch({ type: "ADD_TX", payload });
-    setForm((f) => ({ ...f, amount: "", note: "", category: "" }));
+    setForm((f) => ({
+      ...f, amount: "", note: "", category: "",
+      isBulk: false, bulkStart: "", bulkEnd: "",
+    }));
     setError("");
     setPendingDuplicate(null);
     onSaved("Entry saved ✓");
@@ -354,10 +370,67 @@ export function EntryFormPanel({
             >
               {MEAL_SESSIONS.map((sess) => (
                 <option key={sess} value={sess}>
-                  {sess === "Breakfast" ? "🌅" : sess === "Lunch" ? "☀️" : "🌙"} {sess}
+                  {sess === "Breakfast" ? "🌅"
+                    : sess === "Lunch" ? "☀️"
+                    : sess === "Dinner" ? "🌙"
+                    : "☀️🌙"} {sess}
                 </option>
               ))}
             </select>
+
+            <label style={{
+              display: "flex", alignItems: "center", gap: 8,
+              marginTop: 14, cursor: "pointer", userSelect: "none",
+            }}>
+              <input
+                type="checkbox"
+                checked={form.isBulk}
+                onChange={(e) => {
+                  const checked = e.target.checked;
+                  setForm((f) => ({
+                    ...f,
+                    isBulk: checked,
+                    bulkStart: checked && !f.bulkStart ? activeDate : f.bulkStart,
+                  }));
+                  setError("");
+                }}
+                style={{ width: 16, height: 16, accentColor: "#b45309", cursor: "pointer" }}
+              />
+              <span style={{ fontSize: 12.5, fontWeight: 600, color: "#d99a4e" }}>
+                📦 Bulk purchase (covers a date range, e.g. a whole month)
+              </span>
+            </label>
+
+            {form.isBulk && (
+              <div style={{ marginTop: 12 }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                  <div>
+                    <label style={{ ...labelSt, color: "#b45309", fontSize: 10 }}>Start Date</label>
+                    <input
+                      type="date"
+                      value={form.bulkStart}
+                      max={form.bulkEnd || undefined}
+                      onChange={(e) => setF("bulkStart", e.target.value)}
+                      style={{ borderColor: "#78460a", background: "#1a0e00", color: "#f59e0b" }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ ...labelSt, color: "#b45309", fontSize: 10 }}>End Date</label>
+                    <input
+                      type="date"
+                      value={form.bulkEnd}
+                      min={form.bulkStart || undefined}
+                      onChange={(e) => setF("bulkEnd", e.target.value)}
+                      style={{ borderColor: "#78460a", background: "#1a0e00", color: "#f59e0b" }}
+                    />
+                  </div>
+                </div>
+                <div style={{ fontSize: 10.5, color: "#8a6a3a", marginTop: 6, lineHeight: 1.4 }}>
+                  The amount is still recorded against {activeDate} in the float ledger — this
+                  just tags the period it covers.
+                </div>
+              </div>
+            )}
           </div>
         )}
 

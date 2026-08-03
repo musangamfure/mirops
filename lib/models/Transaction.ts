@@ -20,6 +20,11 @@ const TransactionSchema = new Schema(
     site: { type: String },
     category: { type: String },
     mealSession: { type: String },
+    // Bulk meal purchases (e.g. a month's food bought in one go) — the
+    // transaction still posts on `date` for the float ledger, these just
+    // tag the period it's meant to cover.
+    bulkStart: { type: String },
+    bulkEnd: { type: String },
     // Legacy field — no longer written. Kept in the schema so existing
     // documents from before the Site rework still load without error;
     // the API layer migrates it into `site` on read.
@@ -40,6 +45,8 @@ export interface TransactionDoc {
   site?: string;
   category?: string;
   mealSession?: string;
+  bulkStart?: string;
+  bulkEnd?: string;
   /** @deprecated legacy field, migrated into `site` on read */
   mealSite?: string;
   createdAt?: Date;

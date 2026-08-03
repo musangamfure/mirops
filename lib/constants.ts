@@ -35,7 +35,9 @@ export const DEFAULT_EXPENSE_CATS = [
 export type ExpenseCat = string;
 
 // ─── MEAL SESSIONS ──────────────────────────────────────────────────────────
-export const MEAL_SESSIONS = ["Breakfast", "Lunch", "Dinner"] as const;
+// "Lunch & Dinner" covers a single purchase meant to feed both sessions
+// (e.g. one food buy split across the day) rather than two entries.
+export const MEAL_SESSIONS = ["Breakfast", "Lunch", "Dinner", "Lunch & Dinner"] as const;
 export type MealSession = (typeof MEAL_SESSIONS)[number];
 
 // ─── RAW MATERIALS (mushroom tube production inventory) ────────────────────

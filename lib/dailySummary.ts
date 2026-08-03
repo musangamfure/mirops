@@ -31,6 +31,8 @@ function normalizeTx(doc: TransactionDoc & { dept?: string }): Tx {
     site: site as Tx["site"],
     category: doc.category,
     mealSession: doc.mealSession as Tx["mealSession"],
+    bulkStart: doc.bulkStart,
+    bulkEnd: doc.bulkEnd,
   };
 }
 

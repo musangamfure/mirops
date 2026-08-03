@@ -20,6 +20,11 @@ export interface Transaction {
   category?: ExpenseCat;
   // meals
   mealSession?: MealSession;
+  // meals — bulk purchase (e.g. a month's worth of food bought at once).
+  // The transaction still posts to `date` for the float ledger (that's
+  // when the cash actually left); these just tag the coverage period.
+  bulkStart?: string;   // YYYY-MM-DD
+  bulkEnd?: string;     // YYYY-MM-DD
   // top-up (no product/category/site needed)
 }
 
@@ -38,6 +43,9 @@ export interface EntryForm {
   site: SiteId;
   category: ExpenseCat | "";
   mealSession: MealSession;
+  isBulk: boolean;
+  bulkStart: string;
+  bulkEnd: string;
   amount: string;
   note: string;
 }

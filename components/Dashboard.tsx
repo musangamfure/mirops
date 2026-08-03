@@ -423,6 +423,8 @@ export function EntryRow({
         product: updated.product,
         category: updated.category,
         mealSession: updated.category === "Meals (Staff)" ? t.mealSession : undefined,
+        bulkStart: updated.category === "Meals (Staff)" ? t.bulkStart : undefined,
+        bulkEnd: updated.category === "Meals (Staff)" ? t.bulkEnd : undefined,
       },
     });
     setEditing(false);
@@ -476,6 +478,12 @@ export function EntryRow({
                 background: "#b4530922", color: "#b45309", border: "1px solid #b4530944",
                 borderRadius: 6, padding: "1px 7px", fontSize: 11, fontWeight: 600,
               }}>{t.mealSession}</span>
+            )}
+            {t.bulkStart && t.bulkEnd && (
+              <span style={{
+                background: "#b4530922", color: "#b45309", border: "1px solid #b4530944",
+                borderRadius: 6, padding: "1px 7px", fontSize: 11, fontWeight: 600,
+              }}>📦 {t.bulkStart} → {t.bulkEnd}</span>
             )}
           </div>
           <div style={{ fontSize: 11, color: "#6a9c6a", marginTop: 2 }}>
