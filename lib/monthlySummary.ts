@@ -130,14 +130,12 @@ export async function buildMonthlySummary(month: string): Promise<MonthlySummary
   const prevNet = prevRevenue - prevExpense;
 
   const revByProduct = byProduct(monthTx, "revenue");
-  const expenseCats = Array.from(
+  const expenseCatsRaw = Array.from(
     new Set(monthTx.filter((t) => t.kind === "expense" && t.category).map((t) => t.category as string))
-  ).sort((a, b) => {
-    // Highest spend first
-    const totals = byCategory(monthTx, "expense", expenseCats);
-    return (totals[b] ?? 0) - (totals[a] ?? 0);
-  });
-  const expByCategory = byCategory(monthTx, "expense", expenseCats);
+  );
+  const expByCategory = byCategory(monthTx, "expense", expenseCatsRaw);
+  // Highest spend first
+  const expenseCats = [...expenseCatsRaw].sort((a, b) => (expByCategory[b] ?? 0) - (expByCategory[a] ?? 0));
 
   const siteTotals = bySite(monthTx, SITES.map((s) => s.id));
   const meals = mealsBySiteToday(monthTx); // filters by category only — safe to reuse for any tx window
