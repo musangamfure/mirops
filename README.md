@@ -126,6 +126,50 @@ https://your-app.vercel.app/api/cron/daily-summary?date=2026-07-07
 (include the `Authorization: Bearer <CRON_SECRET>` header if you set one).
 The `date` param is optional — it defaults to "today" in Kigali time.
 
+## Monthly Report Email
+
+On the **1st of every month at 9:00pm Kigali time**, the app emails a full
+report on the month that just ended — total revenue and expenses, revenue by
+department, expenses by category, a per-site P&L, staff meal spend, payroll
+paid, cash-float health (opening/closing balance, lowest point, any
+deficit/low-float days), and an overall **company health verdict** (🟢
+Healthy / 🟡 Caution / 🔴 Needs Attention) compared against the prior month.
+It's sent via the same Gmail SMTP setup as the daily summary and scheduled
+with **Vercel Cron** (`vercel.json`).
+
+Vercel lifted the old 2-cron-per-project cap on Hobby in January 2026 (it's
+now 100 cron jobs on every plan), so this runs as a second, independent cron
+alongside the daily summary — each is still limited to at most once a day,
+which is exactly what both need.
+
+### Setup
+
+Uses the same `GMAIL_USER` / `GMAIL_APP_PASSWORD` / `CRON_SECRET` as the
+daily summary, plus one more (optional) variable:
+
+```env
+MONTHLY_REPORT_TO=owner@example.com,manager@example.com
+```
+
+- If `MONTHLY_REPORT_TO` isn't set, it falls back to `DAILY_SUMMARY_TO`.
+- `vercel.json` schedules `GET /api/cron/monthly-summary` for `0 19 1 * *`
+  (19:00 UTC on the 1st = 21:00 Kigali). Because the report covers the month
+  that just ended, a run on Aug 1 sends July's report, a run on Sep 1 sends
+  August's, and so on — no manual date math needed.
+- Vercel guarantees only that an hourly-scheduled Hobby cron fires sometime
+  within that hour, not at the exact minute.
+
+**To test it manually** or to (re-)send a specific month without waiting for
+the 1st:
+
+```
+https://your-app.vercel.app/api/cron/monthly-summary?month=2026-07
+```
+
+(include the `Authorization: Bearer <CRON_SECRET>` header if you set one).
+The `month` param is optional — it defaults to "last calendar month" in
+Kigali time.
+
 ## Deploying to Vercel
 
 1. Push this project to a GitHub (or GitLab/Bitbucket) repository.
@@ -156,6 +200,7 @@ vercel
 | `GET`    | `/api/floats`             | Opening-float overrides, as `{date: amount}` |
 | `PUT`    | `/api/floats`             | Set the opening float for a date            |
 | `GET`    | `/api/cron/daily-summary` | Builds & emails the daily digest (Vercel Cron; auth via `CRON_SECRET`) |
+| `GET`    | `/api/cron/monthly-summary` | Builds & emails the monthly report (Vercel Cron; auth via `CRON_SECRET`) |
 
 Transaction fields mirror `lib/types.ts` (`Transaction`): `id`, `kind`
 (`revenue` / `expense` / `float_topup`), `date`, `amount`, `note`, plus
@@ -205,4 +250,6 @@ lib/
     Transaction.ts # Mongoose schema for transactions
     Float.ts       # Mongoose schema for opening-float overrides
   api.ts           # Client API calls + localStorage fallback
+  dailySummary.ts  # Builds the daily digest email
+  monthlySummary.ts # Builds the monthly report email
 ```
